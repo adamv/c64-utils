@@ -1,7 +1,7 @@
 dir.py <filename.d64>
     Displays a directory listing for the given 1541 disk image.
     
-lib\
+c64\
     Actual D64, T64, etc. support modules.
 
 1984-05.d64
