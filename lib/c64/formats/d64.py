@@ -60,15 +60,8 @@ x       # $A0
 class DiskImage(object):
     """Represents the bytes of a D64 disk image used by C64 emulators.
     
-    A D64 file represents the data bytes (and sometimes error codes) read
-    off of a 5.25" 1541 disk. Usually these will be formatted using CBM-DOS,
-    but not always (and sometimes the format is hand-crafted into a hybrid disk.)
-    
-    For flexibility, this class only handles the data bytes, accessible as sectors,
-    and leaves CBM-DOS support for a higher-level class.
-    
-    But since it is a common trick, there is support for returning just the data
-    bytes from a series of linked sectors.
+    This class can retreive sector data, but has no knowledge of file or directory formats
+    except for being able to walk a chain of linked sectors.
     """
 
     sectors_per_track = (
@@ -107,19 +100,16 @@ class DiskImage(object):
         """Walks a chain of linked sectors, using the given callback."""
         sectors_seen = set()
 
-        while True:
+        while track > 0:
+            if (track, sector) in sectors_seen:
+                raise CircularFileError, "Circular file detected: %s, %s" % ((track, sector), sectors_seen)
+
             sectors_seen.add( (track, sector) )
             raw_bytes = self.get_sector(track, sector)
             track, sector = ord(raw_bytes[0]), ord(raw_bytes[1])
             
-            # Pass the sector's bytes and the next track/sector to the callback.
             callback(raw_bytes, track, sector)
-                
-            # If we've already seen the next sector in the chain
-            # then this file has been hand-crafted to be a loop
-            if (track, sector) in sectors_seen:
-                raise CircularFileException, "Circular file detected"
-
+            
     def read_file(self, track, sector):
         """Read file bytes from the given starting track/sector, assuming 
         the common "linked sectors" format used by CBM-DOS."""
@@ -133,35 +123,6 @@ class DiskImage(object):
             file_bytes += raw_bytes[2:2+good_bytes]
             
         self.walk_sectors(track, sector, cb)
-        return file_bytes
-        
-        
-    def read_file2(self, track, sector):
-        """Read file bytes from the given starting track/sector, assuming 
-        the common "linked sectors" format used by CBM-DOS."""
-        file_bytes = str()
-        sectors_seen = set()
-
-        while True:
-            sectors_seen.add( (track, sector) )
-            raw_bytes = self.get_sector(track, sector)
-            track, sector = ord(raw_bytes[0]), ord(raw_bytes[1])
-        
-            # If there is no next track, then the "sector"
-            # is actually the number of valid data bytes in 
-            # this last sector.
-            good_bytes = 254 if track > 0 else sector
-        
-            file_bytes += raw_bytes[2:2+good_bytes]
-            
-            if track == 0:
-                break
-                
-            # If we've already seen the next sector in the chain
-            # then this file has been hand-crafted to be a loop
-            if (track, sector) in sectors_seen:
-                raise CircularFileException, "Circular file detected"
-        
         return file_bytes
 
     def __str__(self):
@@ -203,33 +164,23 @@ class DirectorySector(object):
 class DosDisk(object):
     """Represents a CBM-DOS formatted Disk Image."""
     
-    DIR_SECTOR = (18,1)
-    
     def __init__(self, disk):
         self.disk = disk
         self._read_directory()
         
     def _read_directory(self):
-        # The Block Availability Map lives in track 18, sector 1
         header = self.disk.get_sector(18,0)
 
         self.BAM, self.raw_disk_name, self.disk_id =\
             struct.unpack(STRUCT_HEADER, header)
             
         self.disk_name = self.raw_disk_name.strip('\xA0')
-        
         self.directory_sectors = list()
-        
-        # Read the first directory listing sector
-        # Initial track/sector of directory listing.
-        t,s = self.DIR_SECTOR
-        while t != 0:
-            # Get sector bytes
-            sector_bytes = self.disk.get_sector(t, s)
-            # Get the next track/sector
-            t,s = ord(sector_bytes[0]), ord(sector_bytes[1])
-            # Process these sector bytes
-            self.directory_sectors.append(DirectorySector(sector_bytes, t, s))
+
+        def cb(block, t, s):
+            self.directory_sectors.append(DirectorySector(block, t, s))
+
+        self.disk.walk_sectors(18, 1, cb)
     
     def entries(self):
         """Includes empty entries."""
