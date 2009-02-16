@@ -17,10 +17,17 @@ FILE_TYPES = {
     4: "REL",
 }
 
+def blocks(bytes, block_size):
+    i = 0
+    while i < len(bytes):
+        yield bytes[i:i+block_size]
+        i += block_size
+
 
 def struct_doc(format):
-    f = [x.partition('#')[0].strip() for x in format.splitlines()]
-    return ''.join(f)
+    'A silly function to allow "readable" struct formats.'
+    return ''.join(
+        x.partition('#')[0].strip() for x in format.splitlines() )
 
 
 STRUCT_ENTRY = struct_doc('''
@@ -96,7 +103,40 @@ class DiskImage(object):
         ofs = self.get_byte_offset(track, sector)
         return self.bytes[ofs:ofs + BYTES_PER_SECTOR]
         
+    def walk_sectors(self, track, sector, callback):
+        """Walks a chain of linked sectors, using the given callback."""
+        sectors_seen = set()
+
+        while True:
+            sectors_seen.add( (track, sector) )
+            raw_bytes = self.get_sector(track, sector)
+            track, sector = ord(raw_bytes[0]), ord(raw_bytes[1])
+            
+            # Pass the sector's bytes and the next track/sector to the callback.
+            callback(raw_bytes, track, sector)
+                
+            # If we've already seen the next sector in the chain
+            # then this file has been hand-crafted to be a loop
+            if (track, sector) in sectors_seen:
+                raise CircularFileException, "Circular file detected"
+
     def read_file(self, track, sector):
+        """Read file bytes from the given starting track/sector, assuming 
+        the common "linked sectors" format used by CBM-DOS."""
+        file_bytes = str()
+        
+        def cb(block, next_track, next_sector):
+            # If there is no next track, then the "sector"
+            # is actually the number of valid data bytes in 
+            # this last sector.
+            good_bytes = 254 if next_track > 0 else next_sector
+            file_bytes += raw_bytes[2:2+good_bytes]
+            
+        self.walk_sectors(track, sector, cb)
+        return file_bytes
+        
+        
+    def read_file2(self, track, sector):
         """Read file bytes from the given starting track/sector, assuming 
         the common "linked sectors" format used by CBM-DOS."""
         file_bytes = str()
@@ -152,15 +192,13 @@ class DirectorySector(object):
     """Represents a CBM-DOS directory sector (with multiple entries.)"""
     
     def __init__(self, bytes, track, sector):
-        """Initialize this directory sector from a disk sector of 256 bytes."""
+        """Initialize this DirectorySector from a disk sector."""
         self.bytes = bytes
         self.location = (track, sector)
         self.next_sector = (bytes[0], bytes[1])
         
-        self.entries = list()
-        for i in range(0, 8):
-            ofs = i*32
-            self.entries.append(DirectoryEntry(bytes[ofs:ofs+32]))
+        self.entries = [DirectoryEntry(x) for x in blocks(bytes, 32)]
+
 
 class DosDisk(object):
     """Represents a CBM-DOS formatted Disk Image."""
