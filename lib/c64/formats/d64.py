@@ -9,6 +9,14 @@ class CircularFileError(Exception): pass
 class FormatError(Exception): pass
 class IllegalSectorError(Exception): pass
 
+FILE_TYPES = {
+    0: "DEL",
+    1: "SEQ",
+    2: "PRG",
+    3: "USR",
+    4: "REL",
+}
+
 
 def struct_doc(format):
     f = [x.partition('#')[0].strip() for x in format.splitlines()]
@@ -157,6 +165,8 @@ class DirectorySector(object):
 class DosDisk(object):
     """Represents a CBM-DOS formatted Disk Image."""
     
+    DIR_SECTOR = (18,1)
+    
     def __init__(self, disk):
         self.disk = disk
         self._read_directory()
@@ -174,7 +184,7 @@ class DosDisk(object):
         
         # Read the first directory listing sector
         # Initial track/sector of directory listing.
-        t,s = 18,1
+        t,s = self.DIR_SECTOR
         while t != 0:
             # Get sector bytes
             sector_bytes = self.disk.get_sector(t, s)
@@ -202,3 +212,17 @@ class DosDisk(object):
 def load(filename):
     s = open(filename).read()
     return DosDisk(DiskImage(s))
+
+def directory(filename):
+    d = load(filename)
+    print
+    print 'Diskette "%s", %2s' % (d.disk_name, d.disk_id)
+    print
+    
+    for e in d.entries():
+        if e.size == 0:
+            break
+        
+        kind = e.typeflags & 0x03
+        print "%-5u %-18s  %s" % (e.size, '"'+e.name+'"', FILE_TYPES[kind])
+        #print e.typeflags, e.track, e.sector, e.name, e.size
