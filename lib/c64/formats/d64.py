@@ -196,7 +196,7 @@ class DosDisk(object):
         return self.disk.read_file(e.track, e.sector)
     
     def __str__(self):
-        return '<DosDisk "%s">' % (self.disk_name)
+        return '<DosDisk "%s" "%s">' % (self.disk_name, self.disk_id)
 
 
 def load(filename):
