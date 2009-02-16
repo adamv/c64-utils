@@ -14,4 +14,15 @@ def dump_file(bytes):
             print
     print
 
-d64.directory("1984-05.d64")
+USAGE = """
+List the contents of a 1541 disk image (.D64)
+
+List the directory:
+    ./dir.py <disk image name>
+"""
+
+if __name__ == '__main__':
+    if len(sys.argv) == 2:
+        d64.directory(sys.argv[1])
+    else:
+        print USAGE
