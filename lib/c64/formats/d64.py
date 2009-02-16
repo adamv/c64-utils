@@ -5,69 +5,40 @@ import struct
 
 BYTES_PER_SECTOR = 256
 
+class CircularFileError(Exception): pass
+class FormatError(Exception): pass
+class IllegalSectorError(Exception): pass
+
+
 def struct_doc(format):
     f = [x.partition('#')[0].strip() for x in format.splitlines()]
     return ''.join(f)
 
 
-class IllegalSectorError(Exception): pass
-class FormatError(Exception): pass
-class CircularFileError(Exception): pass
-
-entry_docs = """
-    Disk type                  Size
-    ---------                  ------
-    35 track, no errors        174848
-    35 track, 683 error bytes  175531
-    40 track, no errors        196608
-    40 track, 768 error bytes  197376
-
-  Bytes: $00-1F: First directory entry
-          00-01: Track/Sector location of next directory sector ($00 $00 if
-                 not the first entry in the sector)
-             02: File type.
-                 Typical values for this location are:
-                   $00 - Scratched (deleted file entry)
-                    80 - DEL
-                    81 - SEQ
-                    82 - PRG
-                    83 - USR
-                    84 - REL
-                 Bit 0-3: The actual filetype
-                          000 (0) - DEL
-                          001 (1) - SEQ
-                          010 (2) - PRG
-                          011 (3) - USR
-                          100 (4) - REL
-                          Values 5-15 are illegal, but if used will produce
-                          very strange results. The 1541 is inconsistent in
-                          how it treats these bits. Some routines use all 4
-                          bits, others ignore bit 3,  resulting  in  values
-                          from 0-7.
-                 Bit   4: Not used
-                 Bit   5: Used only during SAVE-@ replacement
-                 Bit   6: Locked flag (Set produces ">" locked files)
-                 Bit   7: Closed flag  (Not  set  produces  "*", or "splat"
-                          files)
-          03-04: Track/sector location of first sector of file
-          05-14: 16 character filename (in PETASCII, padded with $A0)
-          15-16: Track/Sector location of first side-sector block (REL file
-                 only)
-             17: REL file record length (REL file only, max. value 254)
-          18-1D: Unused (except with GEOS disks)
-          1E-1F: File size in sectors, low/high byte  order  ($1E+$1F*256).
-                 The approx. filesize in bytes is <= #sectors * 254
-"""
-
 STRUCT_ENTRY = struct_doc('''
-<   # Little-endian
-xx  # Track/Sector of next Directory Sector (or 0 if not first entry in sector)
-B   # File Type
-BB  # Track/Sector of first File Sector
-16s # Filename, PET-ASCII, $A0 padded
-xxx # RELative file data
+<      # Little-endian
+xx     # Track/Sector of next Directory Sector (or 0 if not first entry in sector)
+B      # File Type
+BB     # Track/Sector of first File Sector
+16s    # Filename, PET-ASCII, $A0 padded
+xxx    # RELative file data
 xxxxxx # Unused (except with GEOS disks)
-H   # File size in sectors
+H      # File size in sectors
+''')
+
+STRUCT_HEADER = struct_doc('''
+<       # Little-endian
+2x      # Track/sector of first directory block; should always be 18/1 for normal disks
+x       # 'A' (representing "4040 format".)
+x       # 0 ("Null flag for future DOS use.")
+140s    # Block Allocation Map (BAM)
+16s     # Disk name, PET-ASCII, $A0 padded
+2x      # Two shift-spaces
+2s      # Disk ID
+x       # $A0
+2x      # '2A' (DOS version and format type.)
+4x      # Shifted spaces ($A0)
+85x     # Rest of disk is unused.
 ''')
 
 
@@ -94,11 +65,6 @@ class DiskImage(object):
         17, 17, 17, 17, 17, # For extended disks.
         )
 
-    ## Sectors per track for each of 4 groups
-    #sectors_per_group = (21, 19, 18, 17)
-    ## The last numbered sector in each size group
-    #last_sized_track = (17, 24, 30, 40)
-    
     def __init__(self, bytes):
         self.bytes = bytes
         self._determine_tracks()
@@ -134,12 +100,10 @@ class DiskImage(object):
             raw_bytes = self.get_sector(track, sector)
             track, sector = ord(raw_bytes[0]), ord(raw_bytes[1])
         
-            good_bytes = 254
             # If there is no next track, then the "sector"
             # is actually the number of valid data bytes in 
             # this last sector.
-            if track == 0:
-                good_bytes = sector
+            good_bytes = 254 if track > 0 else sector
         
             file_bytes += raw_bytes[2:2+good_bytes]
             
@@ -159,7 +123,7 @@ class DiskImage(object):
 #STRUCT_ENTRY = '<xx B BB 16s xxx xxxxxx H'
 
 class DirectoryEntry(object):
-    """Represents a single CBM-DOS directory entry (8 per sector.)"""
+    """Represents a single CBM-DOS directory entry."""
     
     def __init__(self, bytes):
         self.bytes = bytes
@@ -183,7 +147,6 @@ class DirectorySector(object):
         """Initialize this directory sector from a disk sector of 256 bytes."""
         self.bytes = bytes
         self.location = (track, sector)
-        
         self.next_sector = (bytes[0], bytes[1])
         
         self.entries = list()
@@ -193,14 +156,19 @@ class DirectorySector(object):
 
 class DosDisk(object):
     """Represents a CBM-DOS formatted Disk Image."""
-    # Number of bytes into the image for track 18 (directory)
+    
     def __init__(self, disk):
         self.disk = disk
         self._read_directory()
         
     def _read_directory(self):
         # The Block Availability Map lives in track 18, sector 1
-        self.BAM = self.disk.get_sector(18,0)
+        header = self.disk.get_sector(18,0)
+
+        self.BAM, self.raw_disk_name, self.disk_id =\
+            struct.unpack(STRUCT_HEADER, header)
+            
+        self.disk_name = self.raw_disk_name.strip('\xA0')
         
         self.directory_sectors = list()
         
@@ -228,8 +196,8 @@ class DosDisk(object):
         return self.disk.read_file(e.track, e.sector)
     
     def __str__(self):
-        return str(self.disk)
-        #return "<D64 image: %d bytes, %d tracks>" % (len(self.bytes), self.tracks)
+        return '<DosDisk "%s">' % (self.disk_name)
+
 
 def load(filename):
     s = open(filename).read()

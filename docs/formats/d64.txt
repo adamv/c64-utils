@@ -1,0 +1,64 @@
+A ".D64" file is a 1541 disk image containing the data bytes (and rarely, a
+set of per-track errors.) There is no header or meta-information captured,
+so there is no fool-proof way to tell if a random file is a disk image (though
+typically it will conform to CBM-DOS formatting.)
+
+
+There are four disk types, differentiated by the byte size of the file.
+
+Disk type                  Size
+---------                  ------
+35 track, no errors        174848
+35 track, 683 error bytes  175531
+40 track, no errors        196608
+40 track, 768 error bytes  197376
+
+
+Tracks on a disk contain different numbers of sectors; there are fewer
+sectors on tracks closer to the center of the disk.
+
+    Sectors per track for each of 4 groups
+    sectors_per_group = (21, 19, 18, 17)
+
+    Last numbered sector in each size group:
+    last_sized_track = (17, 24, 30, 40)
+
+
+
+Dos directory entry format.
+
+  Bytes: $00-1F: First directory entry
+          00-01: Track/Sector location of next directory sector ($00 $00 if
+                 not the first entry in the sector)
+             02: File type.
+                 Typical values for this location are:
+                   $00 - Scratched (deleted file entry)
+                    80 - DEL
+                    81 - SEQ
+                    82 - PRG
+                    83 - USR
+                    84 - REL
+                 Bit 0-3: The actual filetype
+                          000 (0) - DEL
+                          001 (1) - SEQ
+                          010 (2) - PRG
+                          011 (3) - USR
+                          100 (4) - REL
+                          Values 5-15 are illegal, but if used will produce
+                          very strange results. The 1541 is inconsistent in
+                          how it treats these bits. Some routines use all 4
+                          bits, others ignore bit 3,  resulting  in  values
+                          from 0-7.
+                 Bit   4: Not used
+                 Bit   5: Used only during SAVE-@ replacement
+                 Bit   6: Locked flag (Set produces ">" locked files)
+                 Bit   7: Closed flag  (Not  set  produces  "*", or "splat"
+                          files)
+          03-04: Track/sector location of first sector of file
+          05-14: 16 character filename (in PETASCII, padded with $A0)
+          15-16: Track/Sector location of first side-sector block (REL file
+                 only)
+             17: REL file record length (REL file only, max. value 254)
+          18-1D: Unused (except with GEOS disks)
+          1E-1F: File size in sectors, low/high byte  order  ($1E+$1F*256).
+                 The approx. filesize in bytes is <= #sectors * 254
