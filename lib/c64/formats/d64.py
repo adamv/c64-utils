@@ -46,7 +46,7 @@ x       # 0 ("Null flag for future DOS use.")
 x       # $A0
 2x      # '2A' (DOS version and format type.)
 4x      # Shifted spaces ($A0)
-85x     # Rest of disk is unused.
+85x     # Rest of sector is unused.
 ''')
 
 
@@ -88,8 +88,7 @@ class DiskImage(object):
     
     def get_byte_offset(self, track, sector):
         "Returns the byte-offset of the given sector."
-        ofs = sector + sum( 
-            self.sectors_per_track[i] for i in range(1,track) )
+        ofs = sector + sum(self.sectors_per_track[i] for i in range(1,track))
 
         return ofs * BYTES_PER_SECTOR
     
@@ -98,8 +97,8 @@ class DiskImage(object):
         return self.bytes[ofs:ofs + BYTES_PER_SECTOR]
         
     def read_file(self, track, sector):
-        """Read file bytes from the given starting track/sector, assuming the common
-        "linked sectors" format used by CBM-DOS."""
+        """Read file bytes from the given starting track/sector, assuming 
+        the common "linked sectors" format used by CBM-DOS."""
         file_bytes = str()
         sectors_seen = set()
 
@@ -126,7 +125,8 @@ class DiskImage(object):
         return file_bytes
 
     def __str__(self):
-        return "<D64 Disk image: %d bytes, %d tracks>" % (len(self.bytes), self.tracks)
+        return "<D64 Disk image: %d bytes, %d tracks>" % (
+            len(self.bytes), self.tracks)
 
 #STRUCT_ENTRY = '<xx B BB 16s xxx xxxxxx H'
 
@@ -220,9 +220,10 @@ def directory(filename):
     print
     
     for e in d.entries():
+        # Drop out when we get to empty entries
+        # These should be filtered at a different level eventually
         if e.size == 0:
             break
         
         kind = e.typeflags & 0x03
         print "%-5u %-18s  %s" % (e.size, '"'+e.name+'"', FILE_TYPES[kind])
-        #print e.typeflags, e.track, e.sector, e.name, e.size
