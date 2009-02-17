@@ -1,6 +1,9 @@
 dir.py <filename.d64>
     Displays a directory listing for the given 1541 disk image.
     
+dir.py <filename.d64> <file-on-dsk>
+    Detokenizes a basic program on a disk image.
+    
 c64\
     Actual D64, T64, etc. support modules.
 
