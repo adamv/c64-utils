@@ -5,6 +5,25 @@ from __future__ import with_statement
 import sys
 from c64.formats import d64, basic
 
+def get_parser():
+    from optparse import OptionParser
+
+    p = OptionParser()
+    opt = p.add_option
+
+    # opt("-q", "--quiet", action="store_false", dest="verbose", default=True, 
+    #     help="don't print status messages to stdout")
+    #     
+    # opt("-i", "--input", action="store", dest="input_filename")
+    # opt("-a", "--addr", action="store", dest="address", default=None,
+    #     help="Provide a load address, overriding one in the header if used.")
+    # opt("-n", "--noheader", action="store_false", dest="use_header_address",
+    #     help="Input file has no 2 byte load address header.")
+    #     
+    # opt("-s", "--symbols", dest="symbol_files", action="callback", callback=vararg_callback, default=())
+        
+    return p
+
 def dump_file(bytes):
     i = 0
     for x in bytes:
@@ -52,9 +71,13 @@ Display a file from the image, as detokenized BASIC:
 """
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        directory(sys.argv[1])
-    elif len(sys.argv) == 3:
-        show_file(sys.argv[1], sys.argv[2])
+    options, args = get_parser().parse_args()
+    
+    image_name = args.pop(0)
+    
+    if len(args) == 0:
+        directory(image_name)
+    elif len(args) == 1:
+        show_file(image_name, args[0])
     else:
         print USAGE
