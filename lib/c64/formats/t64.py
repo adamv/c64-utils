@@ -1,3 +1,5 @@
+"""This module provides support for reading "T64" tape images."""
+
 import struct
 
 def struct_doc(format):

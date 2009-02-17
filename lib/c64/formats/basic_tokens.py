@@ -1,3 +1,5 @@
+"This module contains a mapping for CBM Basic 2.0 tokens."
+
 def split_words(d):
     return [x.split() for x in d.splitlines()]
 

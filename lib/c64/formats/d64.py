@@ -1,5 +1,4 @@
-# Module - c64.formats.d64
-# Provides support for reading "D64" disk images.
+"""This module provides support for reading "D64" disk images."""
 
 from __future__ import with_statement
 import struct
