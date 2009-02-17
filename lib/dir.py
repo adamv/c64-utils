@@ -3,7 +3,7 @@
 from __future__ import with_statement
 
 import sys
-from c64.formats import d64
+from c64.formats import d64, basic
 
 def dump_file(bytes):
     i = 0
@@ -32,7 +32,11 @@ def show_file(image_name, filename):
     d = d64.load(image_name)
     
     try:
-        dump_file(d.find(filename))
+        bytes = d.find(filename)
+        #dump_file(bytes)
+        prg = basic.Basic(bytes)
+        #print
+        print prg.list()
     except d64.FileNotFoundError, e:
         print e
 
@@ -43,7 +47,7 @@ List the contents of a 1541 disk image (.D64)
 List the directory:
     ./dir.py <disk image name>
     
-Display a file from the image:
+Display a file from the image, as detokenized BASIC:
     ./dir.py <disk image name> <file name>
 """
 
