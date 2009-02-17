@@ -7,6 +7,7 @@ import struct
 BYTES_PER_SECTOR = 256
 
 class CircularFileError(Exception): pass
+class FileNotFoundError(Exception): pass
 class FormatError(Exception): pass
 class IllegalSectorError(Exception): pass
 
@@ -112,16 +113,16 @@ class DiskImage(object):
     def read_file(self, track, sector):
         """Read file bytes from the given starting track/sector, assuming 
         the common "linked sectors" format used by CBM-DOS."""
-        file_bytes = str()
-        
+        file_bytes = [str()]
+
         def cb(block, next_track, next_sector):
             # If there is no next track, then the "sector"
             # is actually the number of valid data bytes
             data_count = 254 if next_track > 0 else next_sector
-            file_bytes += raw_bytes[2:2+data_count]
+            file_bytes[0] += block[2:2+data_count]
             
         self.walk_sectors(track, sector, cb)
-        return file_bytes
+        return file_bytes[0]
 
     def __str__(self):
         return "<D64 Disk image: %d bytes, %d tracks>" % (len(self.bytes), self.tracks)
@@ -139,6 +140,22 @@ class DirectoryEntry(object):
         # Directory entries are padded to 16 characters with $A0.
         # Strip these off so we can print the names.
         self.name = self.raw_name.rstrip('\xa0')
+        
+    @property
+    def filetype(self):
+        return self.typeflags & 0x03
+        
+    @property
+    def format(self):
+        return FILE_TYPES[self.typeflags & 0x03]
+        
+    @property
+    def splat(self):
+        return self.typeflags & 0x80 == 0
+        
+    @property
+    def locked(self):
+        return self.typeflags & 0xC0
         
     def __str__(self):
         return "<Directory Entry '%s' %d (%d,%d)>" %\
@@ -164,10 +181,8 @@ class DosDisk(object):
         self._read_directory()
         
     def _read_directory(self):
-        header = self.disk.get_sector(18,0)
-
         self.BAM, self.raw_disk_name, self.disk_id =\
-            struct.unpack(STRUCT_HEADER, header)
+            struct.unpack(STRUCT_HEADER, self.disk.get_sector(18,0))
             
         self.disk_name = self.raw_disk_name.strip('\xA0')
         self.directory_sectors = list()
@@ -177,6 +192,7 @@ class DosDisk(object):
 
         self.disk.walk_sectors(18, 1, cb)
     
+    @property
     def entries(self):
         """Includes empty entries."""
         entries = list()
@@ -186,8 +202,14 @@ class DosDisk(object):
             
     def file(self, i):
         """Return file bytes for entry at index i."""
-        e = list(self.entries())[i]
+        e = list(self.entries)[i]
         return self.disk.read_file(e.track, e.sector)
+        
+    def find(self, filename):
+        for e in self.entries:
+            if e.name == filename:
+                return self.disk.read_file(e.track, e.sector)
+        raise FileNotFoundError, 'File "%s" not found on disk.' % (filename)
     
     def __str__(self):
         return '<DosDisk "%s" "%s">' % (self.disk_name, self.disk_id)
