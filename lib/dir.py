@@ -14,6 +14,22 @@ def dump_file(bytes):
             print
     print
 
+def directory(filename):
+    d = d64.load(filename)
+    print
+    print 'Diskette "%s", %2s' % (d.disk_name, d.disk_id)
+    print
+    
+    for e in d.entries():
+        # Drop out when we get to empty entries
+        # These should be filtered at a different level eventually
+        if e.size == 0:
+            break
+        
+        kind = e.typeflags & 0x03
+        print "%-5u %-18s  %s" % (e.size, '"'+e.name+'"', d64.FILE_TYPES[kind])
+
+
 USAGE = """
 List the contents of a 1541 disk image (.D64)
 
@@ -23,6 +39,6 @@ List the directory:
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
-        d64.directory(sys.argv[1])
+        directory(sys.argv[1])
     else:
         print USAGE

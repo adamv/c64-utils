@@ -1,6 +1,7 @@
 # Module - c64.formats.d64
 # Provides support for reading "D64" disk images.
 
+from __future__ import with_statement
 import struct
 
 BYTES_PER_SECTOR = 256
@@ -43,16 +44,16 @@ H      # File size in sectors
 
 STRUCT_HEADER = struct_doc('''
 <       # Little-endian
-2x      # Track/sector of first directory block; should always be 18/1 for normal disks
+xx      # Track/sector of first directory block; should always be 18/1 for normal disks
 x       # 'A' (representing "4040 format".)
 x       # 0 ("Null flag for future DOS use.")
 140s    # Block Allocation Map (BAM)
 16s     # Disk name, PET-ASCII, $A0 padded
-2x      # Two shift-spaces
+xx      # Two shift-spaces
 2s      # Disk ID
 x       # $A0
-2x      # '2A' (DOS version and format type.)
-4x      # Shifted spaces ($A0)
+xx      # '2A' (DOS version and format type.)
+xxxx    # Shifted spaces ($A0)
 85x     # Rest of sector is unused.
 ''')
 
@@ -78,7 +79,6 @@ class DiskImage(object):
         self._determine_tracks()
 
     def _determine_tracks(self):
-        # Determine number of tracks
         if len(self.bytes) == 174848:
             self.tracks = 35
         elif len(self.bytes) == 196608:
@@ -87,9 +87,8 @@ class DiskImage(object):
             raise FormatError, "Cannot determine the number of tracks."
     
     def get_byte_offset(self, track, sector):
-        "Returns the byte-offset of the given sector."
+        "Return the byte-offset of the given sector."
         ofs = sector + sum(self.sectors_per_track[i] for i in range(1,track))
-
         return ofs * BYTES_PER_SECTOR
     
     def get_sector(self, track, sector):
@@ -117,19 +116,16 @@ class DiskImage(object):
         
         def cb(block, next_track, next_sector):
             # If there is no next track, then the "sector"
-            # is actually the number of valid data bytes in 
-            # this last sector.
-            good_bytes = 254 if next_track > 0 else next_sector
-            file_bytes += raw_bytes[2:2+good_bytes]
+            # is actually the number of valid data bytes
+            data_count = 254 if next_track > 0 else next_sector
+            file_bytes += raw_bytes[2:2+data_count]
             
         self.walk_sectors(track, sector, cb)
         return file_bytes
 
     def __str__(self):
-        return "<D64 Disk image: %d bytes, %d tracks>" % (
-            len(self.bytes), self.tracks)
+        return "<D64 Disk image: %d bytes, %d tracks>" % (len(self.bytes), self.tracks)
 
-#STRUCT_ENTRY = '<xx B BB 16s xxx xxxxxx H'
 
 class DirectoryEntry(object):
     """Represents a single CBM-DOS directory entry."""
@@ -157,7 +153,6 @@ class DirectorySector(object):
         self.bytes = bytes
         self.location = (track, sector)
         self.next_sector = (bytes[0], bytes[1])
-        
         self.entries = [DirectoryEntry(x) for x in blocks(bytes, 32)]
 
 
@@ -201,18 +196,3 @@ class DosDisk(object):
 def load(filename):
     s = open(filename).read()
     return DosDisk(DiskImage(s))
-
-def directory(filename):
-    d = load(filename)
-    print
-    print 'Diskette "%s", %2s' % (d.disk_name, d.disk_id)
-    print
-    
-    for e in d.entries():
-        # Drop out when we get to empty entries
-        # These should be filtered at a different level eventually
-        if e.size == 0:
-            break
-        
-        kind = e.typeflags & 0x03
-        print "%-5u %-18s  %s" % (e.size, '"'+e.name+'"', FILE_TYPES[kind])
