@@ -1,3 +1,4 @@
+"Unit tests for byte stream and formatting code."
 from __future__ import with_statement
 
 import unittest
