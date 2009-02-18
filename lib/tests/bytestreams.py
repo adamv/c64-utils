@@ -23,9 +23,42 @@ class ByteStreamTests(unittest.TestCase):
     sample_bytes = '\x01\x02\x03\x04\x05\x06'
     
     def test_init(self):
+        "ByteStreams should be created correctly given a string."
         b = ByteStream(self.sample_bytes)
         self.assertEquals(self.sample_bytes, b.rest())
-
+        
+    def test_byte(self):
+        "Reading bytes should behave as expected."
+        b = ByteStream(self.sample_bytes)
+        
+        bytes = list()
+        for i in range(len(self.sample_bytes)):
+            bytes.append(b.byte())
+            
+        self.assertEquals([ord(x) for x in self.sample_bytes], bytes)
+        self.assert_(b.eof())
+        
+    def test_word(self):
+        "Reading words should behave as expected."
+        b = ByteStream(self.sample_bytes)
+        
+        words = list()
+        for i in range(len(self.sample_bytes)/2):
+            words.append(b.word())
+        
+        self.assertEquals([2*256+1, 4*256+3, 6*256+5], words)
+        self.assert_(b.eof())
+        
+    def test_read_until(self):
+        b = ByteStream('adam michael vandenberg')
+        
+        words = list()
+        while not b.eof():
+            words.append(b.read_until(' ', keep=False))
+        
+        self.assertEquals(['adam','michael','vandenberg'], words)
+        self.assert_(b.eof())
+            
 
 if __name__ == "__main__":
     unittest.main()  
