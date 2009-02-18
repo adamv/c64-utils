@@ -23,26 +23,32 @@ class ByteStream(object):
         self._i = 0
         
     def word(self):
+        "Read the next two bytes from the stream, and convert them to an integer (little-endian)."
         lo = ord(self.bytes[self._i])
         hi = ord(self.bytes[self._i+1])
         self._i += 2
         return lo + hi*256
         
     def byte(self):
+        "Read the next byte form the strea, and convert to an integer."
         lo = ord(self.bytes[self._i])
         self._i += 1
         return lo
         
     def rest(self):
+        "Return the unread bytes from this stream."
         return self.bytes[self._i:]
         
     def dump(self):
+        "Return a hex representation of the bytes remaining in this stream."
         return ' '.join(['%02X' % (ord(b)) for b in r.rest()])
 
     def eof(self):
+        "Are we at the end of the stream?"
         return self._i >= len(self.bytes)
 
     def read_until(self, b, keep=True):
+        "Return a string up to the character or byte 'b', or the end of the string if b isn't found."
         # b can be a character or integer
         if isinstance(b, int):
             b = chr(b)
@@ -50,12 +56,10 @@ class ByteStream(object):
         j = self._i
         while j < len(self.bytes) and self.bytes[j] != b:
             j += 1
-            
-        if keep:
-            result = self.bytes[self._i:j+1]
-        else:
-            result = self.bytes[self._i:j]
-            
+        
+        cut_off = j+1 if keep else j
+        result = self.bytes[self._i:cut_off]
+
         self._i = j+1
 
         return result
