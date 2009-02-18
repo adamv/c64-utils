@@ -1,29 +1,7 @@
 """Module for de-tokenizing C64 BASIC programs."""
 
 from basic_tokens import TOKEN_MAP
-
-class ByteStream(object):
-    """Represents a stream of little-endian bytes (stored originally as a string)."""
-    
-    def __init__(self, s):
-        self.bytes = list(ord(c) for c in s)
-        
-    def word(self):
-        lo = self.bytes.pop(0)
-        hi = self.bytes.pop(0)
-        return lo + hi*256
-        
-    def byte(self):
-        return self.bytes.pop(0)
-        
-    def rest(self):
-        return self.bytes[:]
-        
-    def dump(self):
-        return ' '.join(['%02X' % (b) for b in r.rest()])
-
-    def eof(self):
-        return not len(self.bytes)
+from c64.formats import ByteStream
 
 
 class Basic(object):

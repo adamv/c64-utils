@@ -1,7 +1,11 @@
 """This module provides support for reading "D64" disk images."""
 
+# C128 Boot Sector information:
+#   http://www.atarimagazines.com/creative/v11n8/98_A_quick_quo_vadis_the_C1.php
+
 from __future__ import with_statement
 import struct
+from c64.formats import ByteStream, format_bytes
 
 BYTES_PER_SECTOR = 256
 
@@ -58,6 +62,37 @@ xxxx    # Shifted spaces ($A0)
 ''')
 
 
+class BootSector(object):
+    """Represents a C128 boot sector."""
+    def __init__(self, bytes):
+        self.bytes = None
+        self.diskname = ''
+        self.filename = ''
+        self.load_address = 0
+        self.bank = 0
+        self.disk_block = 0
+        self.is_valid = (bytes[0:3] == 'CBM')
+        
+        if self.is_valid:
+            s = ByteStream(bytes[3:])
+            self.load_address = s.word()
+            self.bank = s.byte()
+            self.disk_block = s.byte() # What?
+            self.diskname = s.read_until(0, keep=False)
+            self.filename = s.read_until(0, keep=False)
+            self.bytes = s.rest()
+        
+    def __str__(self):
+        s = ["Valid bootloader: %s" % self.is_valid]
+        if self.is_valid:
+            s.append("Disk name: %s" % (self.diskname or "<None>"))
+            s.append("File name: %s" % (self.filename or "<None>"))
+            s.append("Program bytes:")
+            s.append("%s" % format_bytes(self.bytes))
+            
+        return '\n'.join(s)
+    
+
 class DiskImage(object):
     """Represents the bytes of a D64 disk image used by C64 emulators.
     
@@ -77,6 +112,11 @@ class DiskImage(object):
     def __init__(self, bytes):
         self.bytes = bytes
         self._determine_tracks()
+        self.bootsector = BootSector(self.get_sector(1,0))
+
+    @property
+    def has_boot_sector(self):
+        return self.bootsector.is_valid
 
     def _determine_tracks(self):
         if len(self.bytes) == 174848:

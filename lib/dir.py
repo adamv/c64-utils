@@ -24,15 +24,6 @@ def get_parser():
         
     return p
 
-def dump_file(bytes):
-    i = 0
-    for x in bytes:
-        sys.stdout.write("%02x " % ord(x))
-        i += 1
-        if i % 32 == 0:
-            print
-    print
-
 def directory(image_name):
     d = d64.load(image_name)
     print
@@ -46,6 +37,9 @@ def directory(image_name):
             break
         
         print "%-5u %-18s  %s" % (e.size, '"'+e.name+'"', e.format)
+        
+    print
+    print d.disk.bootsector
 
 def show_file(image_name, filename):
     d = d64.load(image_name)
