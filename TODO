@@ -1,0 +1,4 @@
+
+* Upper/lower in quoted strings (instead of showing uppercase chars as hex and lowercase chars as upper)
+* Add spaces for readbility between tokens
+
