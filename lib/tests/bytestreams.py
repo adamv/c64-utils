@@ -35,7 +35,7 @@ class ByteStreamTests(unittest.TestCase):
         for i in range(len(self.sample_bytes)):
             bytes.append(b.byte())
             
-        self.assertEquals([ord(x) for x in self.sample_bytes], bytes)
+        self.assertEquals([1,2,3,4,5,6], bytes)
         self.assert_(b.eof())
         
     def test_word(self):
