@@ -180,7 +180,7 @@ class DirectorySector(object):
 
 
 class DosDisk(object):
-    """Represents a CBM-DOS formatted Disk Image."""
+    """Represents a CBM-DOS formatted 1541 Disk Image."""
     
     def __init__(self, disk):
         self.disk = disk
@@ -211,7 +211,7 @@ class DosDisk(object):
         e = list(self.entries)[i]
         return self.disk.read_file(e.track, e.sector)
         
-    def find(self, filename):
+    def find(self, filename, ignore_case=False):
         for e in self.entries:
             if e.name == filename:
                 return self.disk.read_file(e.track, e.sector)
@@ -222,5 +222,5 @@ class DosDisk(object):
 
 
 def load(filename):
-    s = open(filename).read()
-    return DosDisk(DiskImage(s))
+    with open(filename) as f:
+        return DosDisk(DiskImage(f.read()))

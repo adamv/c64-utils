@@ -59,6 +59,6 @@ class Basic(object):
         
         if not self.bytes.eof():
             ml_bytes = self.bytes.rest()
-            prg.append("%d more bytes beyond end of BASIC program." % (len(ml_bytes)))
+            prg.append("\n%d more bytes beyond end of BASIC program." % (len(ml_bytes)))
             
         return '\n'.join(prg)
