@@ -1,6 +1,8 @@
 "This module contains a mapping for CBM Basic 2.0 tokens."
 __all__ = ['TOKEN_MAP']
 
+# http://www.viceteam.org/plain/cbm_basic_tokens.txt
+
 def split_words(d):
     return [x.split() for x in d.splitlines()]
 
