@@ -36,7 +36,7 @@ def directory(image_name):
         if e.size == 0:
             break
         
-        print "%-5u %-18s  %s" % (e.size, '"'+e.name+'"', e.format)
+        print "%-5u %-18s  %s  (%d,%d)" % (e.size, '"'+e.name+'"', e.format, e.track, e.sector)
         
     print
     print d.disk.bootsector
@@ -48,7 +48,7 @@ def show_file(image_name, filename):
         bytes = d.find(filename)
         #dump_file(bytes)
         prg = basic.Basic(bytes)
-        #print
+        print "Load address:", prg.load_address
         print prg.list()
     except d64.FileNotFoundError, e:
         print e
