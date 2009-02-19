@@ -5,15 +5,17 @@ from c64.formats import ByteStream
 
 
 class Basic(object):
+    BASIC_RAM = 0x0801
+    
     def __init__(self, bytes, has_header=True):
         """Initialize a Basic object from the given bytes."""
         self.bytes = ByteStream(bytes)
         
-        self.load_address = 0x801
+        self.load_address = self.BASIC_RAM
         # Skip the first two "program location" bytes if there is a header.
         # Might want to verify that they are $01,$80 -> $0801
         if has_header:
-            self.load_addres = self.bytes.word()
+            self.load_address = self.bytes.word()
 
     def list(self):
         prg = list()
@@ -55,4 +57,8 @@ class Basic(object):
                  
             prg.append(''.join(line))
         
+        if not self.bytes.eof():
+            ml_bytes = self.bytes.rest()
+            prg.append("%d more bytes beyond end of BASIC program." % (len(ml_bytes)))
+            
         return '\n'.join(prg)

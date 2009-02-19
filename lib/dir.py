@@ -49,6 +49,8 @@ def show_file(image_name, filename):
         #dump_file(bytes)
         prg = basic.Basic(bytes)
         print "Load address:", prg.load_address
+        if prg.load_address != prg.BASIC_RAM:
+            print "(Non-standard load address, possible hybrid BASIC/ML program.)"
         print prg.list()
     except d64.FileNotFoundError, e:
         print e
