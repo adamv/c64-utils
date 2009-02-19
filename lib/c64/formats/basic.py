@@ -53,7 +53,7 @@ class Basic(object):
                     line.append(opcode)
                 else:
                     # ASCII or special quoted character
-                    if 32 <= c <= 127:
+                    if 32 <= c <= 95:
                         line.append(chr(c))
                     else:
                         line.append(map_quoted_char(c))
