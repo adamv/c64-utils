@@ -46,8 +46,8 @@ def show_file(image_name, filename):
     
     try:
         bytes = d.find(filename)
-        #dump_file(bytes)
         prg = basic.Basic(bytes)
+        
         print
         print "Load address:", prg.load_address
         if prg.load_address != prg.BASIC_RAM:

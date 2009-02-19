@@ -1,6 +1,6 @@
 """Module for de-tokenizing C64 BASIC programs."""
 
-from basic_tokens import TOKEN_MAP
+from basic_tokens import *
 from c64.formats import ByteStream
 
 
@@ -42,9 +42,8 @@ class Basic(object):
                 elif c == 34:
                     # quote characters toggle quote_mode
                     quote_mode = not quote_mode
-                    #line.append( " {Toggled quote mode to %s} " % (quote_mode))
                     line.append(chr(c))
-                elif c >= 0x80 and not quote_mode:
+                elif not quote_mode and 0x80 <= c:
                     # Parse an opcode
                     opcode = TOKEN_MAP.get(c, "{UNKNOWN}")
                     line.append(opcode)
@@ -53,7 +52,8 @@ class Basic(object):
                     if 32 <= c <= 127:
                         line.append(chr(c))
                     else:
-                        line.append("{%02x}" % (c))
+                        outch = CONTROL_MAP.get(c, "{$%02x}" % (c))
+                        line.append(outch)
                  
             prg.append(''.join(line))
         
