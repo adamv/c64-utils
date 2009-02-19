@@ -4,7 +4,10 @@ from basic_tokens import *
 from c64.formats import ByteStream
 
 def map_quoted_char(c):
-    return CONTROL_MAP.get(c, "{$%02x}" % (c))
+    if 32 <= c <= 95:
+        return chr(c)
+    else:
+        return CONTROL_MAP.get(c, "{$%02x}" % (c))
 
 
 class Basic(object):
@@ -29,11 +32,7 @@ class Basic(object):
             if link == 0:
                 break
                 
-            line = list()
-            
-            line.append(str(self.bytes.word()))
-            line.append(' ')
-            
+            line = [str(self.bytes.word()), ' ']            
             quote_mode = False
             
             # Parse this line...
@@ -48,15 +47,12 @@ class Basic(object):
                     quote_mode = not quote_mode
                     line.append(chr(c))
                 elif not quote_mode and 0x80 <= c:
-                    # Parse an opcode
+                    # Parse an opcode token; they have the high bit set
                     opcode = TOKEN_MAP.get(c, "{UNKNOWN}")
                     line.append(opcode)
                 else:
-                    # ASCII or special quoted character
-                    if 32 <= c <= 95:
-                        line.append(chr(c))
-                    else:
-                        line.append(map_quoted_char(c))
+                    # Convert a "PETSCII" to host ASCII
+                    line.append(map_quoted_char(c))
                  
             prg.append(''.join(line))
         

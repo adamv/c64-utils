@@ -130,5 +130,6 @@ CONTROL_MAP = {
     156: "{purple}",
     157: "{left}",
     158: "{yellow}",
-    159: "{cyan}"
+    159: "{cyan}",
+    160: "{shift-space}",
 }	
