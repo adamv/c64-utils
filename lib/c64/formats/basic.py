@@ -3,6 +3,9 @@
 from basic_tokens import *
 from c64.formats import ByteStream
 
+def map_quoted_char(c):
+    return CONTROL_MAP.get(c, "{$%02x}" % (c))
+
 
 class Basic(object):
     BASIC_RAM = 0x0801
@@ -14,6 +17,7 @@ class Basic(object):
         self.load_address = self.BASIC_RAM
         # Skip the first two "program location" bytes if there is a header.
         # Might want to verify that they are $01,$80 -> $0801
+        # ...or use this to switch off between C64/C128 token lists.
         if has_header:
             self.load_address = self.bytes.word()
 
@@ -52,8 +56,7 @@ class Basic(object):
                     if 32 <= c <= 127:
                         line.append(chr(c))
                     else:
-                        outch = CONTROL_MAP.get(c, "{$%02x}" % (c))
-                        line.append(outch)
+                        line.append(map_quoted_char(c))
                  
             prg.append(''.join(line))
         
