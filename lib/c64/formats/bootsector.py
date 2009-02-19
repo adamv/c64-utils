@@ -1,5 +1,9 @@
 from c64.formats import ByteStream, format_bytes
 
+# C128 Boot Sector information:
+#   http://www.atarimagazines.com/creative/v11n8/98_A_quick_quo_vadis_the_C1.php
+
+
 class BootSector(object):
     """Represents a C128 boot sector."""
     def __init__(self, bytes):

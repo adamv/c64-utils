@@ -1,8 +1,5 @@
 """This module provides support for reading "D64" disk images."""
 
-# C128 Boot Sector information:
-#   http://www.atarimagazines.com/creative/v11n8/98_A_quick_quo_vadis_the_C1.php
-
 from __future__ import with_statement
 import struct
 from c64.formats import ByteStream, format_bytes
