@@ -49,45 +49,27 @@ class ByteStreamTests(unittest.TestCase):
         self.assertEquals([2*256+1, 4*256+3, 6*256+5], words)
         self.assert_(b.eof())
         
-    def test_read_until_char(self):
+    def _read_until(self, until, keep, expected):
         b = ByteStream('adam michael vandenberg')
         
         words = list()
         while not b.eof():
-            words.append(b.read_until(' ', keep=False))
+            words.append(b.read_until(until, keep=keep))
         
-        self.assertEquals(['adam','michael','vandenberg'], words)
+        self.assertEquals(expected, words)
         self.assert_(b.eof())
+        
+    def test_read_until_char(self):
+        self._read_until(' ', False, ['adam','michael','vandenberg'])
             
     def test_read_until_byte(self):
-        b = ByteStream('adam michael vandenberg')
-        
-        words = list()
-        while not b.eof():
-            words.append(b.read_until(ord(' '), keep=False))
-        
-        self.assertEquals(['adam','michael','vandenberg'], words)
-        self.assert_(b.eof())
+        self._read_until(ord(' '), False, ['adam','michael','vandenberg'])
             
     def test_read_until_char_keep(self):
-        b = ByteStream('adam michael vandenberg')
-        
-        words = list()
-        while not b.eof():
-            words.append(b.read_until(' ', keep=True))
-        
-        self.assertEquals(['adam ','michael ','vandenberg'], words)
-        self.assert_(b.eof())
+        self._read_until(' ', True, ['adam ','michael ','vandenberg'])
             
     def test_read_until_byte_keep(self):
-        b = ByteStream('adam michael vandenberg')
-        
-        words = list()
-        while not b.eof():
-            words.append(b.read_until(ord(' '), keep=True))
-        
-        self.assertEquals(['adam ','michael ','vandenberg'], words)
-        self.assert_(b.eof())
+        self._read_until(ord(' '), True, ['adam ','michael ','vandenberg'])
             
 
 if __name__ == "__main__":
