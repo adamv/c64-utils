@@ -7,7 +7,7 @@ from c64.formats import ByteStream, format_bytes
 class BootSector(object):
     """Represents a C128 boot sector."""
     def __init__(self, bytes):
-        self.bytes = None
+        self.code = ''
         self.diskname = ''
         self.filename = ''
         self.load_address = 0
@@ -22,7 +22,7 @@ class BootSector(object):
             self.disk_block = s.byte() # What?
             self.diskname = s.read_until(0, keep=False)
             self.filename = s.read_until(0, keep=False)
-            self.bytes = s.rest()
+            self.code = s.rest()
         
     def __str__(self):
         s = ["Valid bootloader: %s" % self.is_valid]
@@ -30,6 +30,6 @@ class BootSector(object):
             s.append("Disk name: %s" % (self.diskname or "<None>"))
             s.append("File name: %s" % (self.filename or "<None>"))
             s.append("Program bytes: (...)")
-            #s.append("%s" % format_bytes(self.bytes))
+            #s.append("%s" % format_bytes(self.code))
             
         return '\n'.join(s)

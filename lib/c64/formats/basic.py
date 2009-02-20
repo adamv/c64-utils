@@ -1,7 +1,7 @@
 """Module for de-tokenizing C64 BASIC programs."""
 
 from basic_tokens import *
-from c64.formats import ByteStream
+from c64.formats import *
 
 def map_quoted_char(c):
     if 32 <= c <= 95:
@@ -32,17 +32,17 @@ class Basic(object):
             if link == 0:
                 break
                 
-            line = [str(self.bytes.word()), ' ']            
+            line = [str(self.bytes.word()), ' ']
             quote_mode = False
             
             # Parse this line...
             while True:
                 c = self.bytes.byte()
-                
                 if c == 0:
                     # 0 ends the line
                     break
-                elif c == 34:
+                    
+                if c == 34:
                     # quote characters toggle quote_mode
                     quote_mode = not quote_mode
                     line.append(chr(c))
@@ -59,5 +59,6 @@ class Basic(object):
         if not self.bytes.eof():
             ml_bytes = self.bytes.rest()
             prg.append("\n%d more bytes beyond end of BASIC program." % (len(ml_bytes)))
+            prg.append("%s" % format_bytes(ml_bytes))
             
         return '\n'.join(prg)
