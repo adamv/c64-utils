@@ -197,14 +197,14 @@ class DosDisk(object):
             self.directory_sectors.append(DirectorySector(block, t, s))
 
         self.disk.walk_sectors(18, 1, cb)
+        
+        self.raw_entries = list()
+        for sector in self.directory_sectors:
+            self.raw_entries.extend(sector.entries)
     
     @property
     def entries(self):
-        """Includes empty entries."""
-        entries = list()
-        for sector in self.directory_sectors:
-            entries.extend(sector.entries)
-        return entries
+        return [e for e in self.raw_entries if e.size > 0]
             
     def file(self, i):
         """Return file bytes for entry at index i."""

@@ -31,11 +31,6 @@ def directory(image_name):
     print
     
     for e in d.entries:
-        # Drop out when we get to empty entries
-        # These should be filtered at a different level eventually
-        if e.size == 0:
-            break
-        
         print "%-5u %-18s  %s  (%d,%d)" % (e.size, '"'+e.name+'"', e.format, e.track, e.sector)
         
     print
