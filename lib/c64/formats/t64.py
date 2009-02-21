@@ -1,5 +1,6 @@
 """This module provides support for reading "T64" tape images."""
 
+from __future__ import with_statement
 import struct
 
 def struct_doc(format):
@@ -111,5 +112,5 @@ class T64(object):
 
 
 def load(filename):
-    s = open(filename).read()
-    return T64(s)
+    with open(filename) as f:
+        return T64(f.read())
