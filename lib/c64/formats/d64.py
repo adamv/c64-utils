@@ -2,7 +2,7 @@
 
 from __future__ import with_statement
 import struct
-from c64 import struct_doc
+from c64 import struct_doc, blocks
 from c64.formats import ByteStream, format_bytes
 from c64.formats.bootsector import BootSector
 
@@ -20,12 +20,6 @@ FILE_TYPES = {
     3: "USR",
     4: "REL",
 }
-
-def blocks(bytes, block_size):
-    i = 0
-    while i < len(bytes):
-        yield bytes[i:i+block_size]
-        i += block_size
 
 
 STRUCT_ENTRY = struct_doc('''

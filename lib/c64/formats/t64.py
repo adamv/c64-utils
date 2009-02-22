@@ -2,10 +2,10 @@
 
 from __future__ import with_statement
 import struct
-from c64 import struct_doc
+from c64 import struct_doc, blocks
 
+class FileNotFoundError(Exception): pass
 class FormatError(Exception): pass
-
 
 TAPE_HEADER = struct_doc('''
 <   # Little-endian
@@ -15,7 +15,6 @@ H   # Used directory entries; non-normative
 xx  # Unused
 24s # Tape name
 ''')
-
 
 TAPE_ENTRY = struct_doc('''
 <   # Little-endian
@@ -29,12 +28,15 @@ xxxx # unused
 16s # Filename, PET-ASCII, $20 padded
 ''')
 
+
 class TapeEntry(object):
     def __init__(self, bytes):
         self.bytes = bytes
         
-        self.c64s_filetype, self.filetype, self.start, self.end, self.offset, self.name=\
+        self.c64s_filetype, self.filetype, self.start, self.end, self.offset, self.raw_name=\
             struct.unpack(TAPE_ENTRY, bytes)
+            
+        self.name = self.raw_name.strip()
             
     def __str__(self):
         return self.name
@@ -46,33 +48,37 @@ class TapeEntry(object):
 class T64(object):
     def __init__(self, bytes):
         self.bytes = bytes
-        self._read_directory()
-        self.validate()
+        self._validate()
         
         self.directory_size, self.directory_entries, self.raw_label =\
             struct.unpack(TAPE_HEADER, bytes[0x20:0x40])
             
         self.label = self.raw_label.strip()
-            
-        self.contents = list()
-        for i in range(0, self.directory_size):
-            ofs = 0x40 + i * 0x20
-            self.contents.append(TapeEntry(self.bytes[ofs:ofs+0x20]))
         
-#        self.typeflags, self.track, self.sector, self.raw_name, self.size =\
-#            struct.unpack(STRUCT_ENTRY, bytes)
-
+        self.entries = [
+            TapeEntry(x) for x in
+            blocks(self.bytes, 0x20, offset=0x40, max=self.directory_size)
+        ]
         
-    def _read_directory(self):
-        pass
-        
-    def validate(self):
+    def _validate(self):
         if not self.bytes.startswith('C64'):
             raise FormatError, "Invalid tape file."
             
     def __str__(self):
-        return ", ".join(str(x) for x in [self.directory_size, self.directory_entries, self.label])
+        return ", ".join(
+            str(x) for x in 
+            [self.directory_size, self.directory_entries, self.label] )
 
+    def file(self, i):
+        """Return file bytes for entry at index i."""
+        return self.entries[i].bytes
+        
+    def find(self, filename, ignore_case=False):
+        for e in self.entries:
+            if e.name == filename:
+                return e.bytes
+        raise FileNotFoundError, 'File "%s" not found on tape.' % (filename)
+    
 
 def load(filename):
     with open(filename) as f:

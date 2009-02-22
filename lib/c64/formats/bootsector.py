@@ -13,7 +13,7 @@ class BootSector(object):
         self.load_address = 0
         self.bank = 0
         self.disk_block = 0
-        self.is_valid = (bytes[0:3] == 'CBM')
+        self.is_valid = bytes.startswith('CBM')
         
         if self.is_valid:
             s = ByteStream(bytes[3:])

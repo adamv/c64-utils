@@ -9,7 +9,8 @@ def rel(path):
 
 class T64Tests(unittest.TestCase):
     def test_load(self):
-        d = t64.load(rel("fixtures/paradrd.t64"))
+        t = t64.load(rel("fixtures/paradrd.t64"))
+        f = t.find("FILE")
 
 
 if __name__ == "__main__":
