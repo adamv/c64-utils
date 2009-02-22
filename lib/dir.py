@@ -40,8 +40,7 @@ def show_file(image_name, filename):
     d = d64.load(image_name)
     
     try:
-        bytes = d.find(filename)
-        prg = basic.Basic(bytes)
+        prg = basic.Basic(d.find(filename))
         
         print
         print "Load address:", prg.load_address

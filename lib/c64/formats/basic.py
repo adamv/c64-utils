@@ -9,6 +9,14 @@ def map_quoted_char(c):
     else:
         return CONTROL_MAP.get(c, "{$%02x}" % (c))
 
+class BasicVersion(object):
+    """Describes a BASIC version."""
+    def __init__(self, start_address, format, tokens, description):
+        self.start_address = start_address
+        self.format = format
+        self.tokens = tokens
+        self.description = description
+
 
 class Basic(object):
     BASIC_RAM = 0x0801
