@@ -108,16 +108,16 @@ class DiskImage(object):
     def read_file(self, track, sector):
         """Read file bytes from the given starting track/sector, assuming 
         the common "linked sectors" format used by CBM-DOS."""
-        file_bytes = [str()]
+        file_bytes = list()
 
         def cb(block, next_track, next_sector):
             # If there is no next track, then the "sector"
             # is actually the number of valid data bytes
             data_count = 254 if next_track > 0 else next_sector
-            file_bytes[0] += block[2:2+data_count]
+            file_bytes.append(block[2:2+data_count])
             
         self.walk_sectors(track, sector, cb)
-        return file_bytes[0]
+        return ''.join(file_bytes)
 
     def __str__(self):
         return "<D64 Disk image: %d bytes, %d tracks>" % (len(self.bytes), self.tracks)
