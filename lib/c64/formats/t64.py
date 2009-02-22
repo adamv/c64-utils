@@ -89,7 +89,7 @@ class T64(object):
         self.directory_size, self.directory_entries, self.raw_label =\
             struct.unpack(TAPE_HEADER, bytes[0x20:0x40])
             
-        self.label = self.raw_label.trim()
+        self.label = self.raw_label.strip()
             
         self.contents = list()
         for i in range(0, self.directory_size):
