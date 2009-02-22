@@ -11,7 +11,7 @@ TAPE_HEADER = struct_doc('''
 <   # Little-endian
 xx  # Tape version, unused
 H   # Max no. of directory entries
-H   # Used directory entries; non-normative
+xx  # Used directory entries; non-normative
 xx  # Unused
 24s # Tape name
 ''')
@@ -50,7 +50,7 @@ class T64(object):
         self.bytes = bytes
         self._validate()
         
-        self.directory_size, self.directory_entries, self.raw_label =\
+        self.directory_size, self.raw_label =\
             struct.unpack(TAPE_HEADER, bytes[0x20:0x40])
             
         self.label = self.raw_label.strip()
