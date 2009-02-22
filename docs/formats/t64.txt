@@ -1,0 +1,32 @@
+Bytes:$20-21: Tape version number of either $0100 or $0101. I am  not  sure
+              what differences exist between versions.
+       22-23: Maximum  number  of  entries  in  the  directory,  stored  in
+              low/high byte order (in this case $0190 = 400 total)
+       24-25: Total number of used entries, once again  in  low/high  byte.
+              Used = $0005 = 5 entries.
+       26-27: Not used
+       28-3F: Tape container name, 24 characters, padded with $20 (space)
+
+       
+Bytes   $40: C64s filetype
+                  0 = free (usually)
+                  1 = Normal tape file
+                  3 = Memory Snapshot, v .9, uncompressed
+              2-255 = Reserved (for memory snapshots)
+         41: 1541 file type (0x82 for PRG, 0x81 for  SEQ,  etc).  You  will
+             find it can vary  between  0x01,  0x44,  and  the  normal  D64
+             values. In reality any value that is not a $00 is  seen  as  a
+             PRG file. When this value is a $00 (and the previous  byte  at
+             $40 is >1), then the file is a special T64 "FRZ" (frozen) C64s
+             session snapshot.
+      42-43: Start address (or Load address). This is the first  two  bytes
+             of the C64 file which is usually the load  address  (typically
+             $01 $08). If the file is a snapshot, the address will be 0.
+      44-45: End address (actual end address in memory,  if  the  file  was
+             loaded into a C64). If  the  file  is  a  snapshot,  then  the
+             address will be a 0.
+      46-47: Not used
+      48-4B: Offset into the conatiner file (from the beginning)  of  where
+             the C64 file starts (stored as low/high byte)
+      4C-4F: Not used
+      50-5F: C64 filename (in PETASCII, padded with $20, not $A0)
