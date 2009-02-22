@@ -91,8 +91,7 @@ class DiskImage(object):
         ofs = self.get_byte_offset(track, sector)
         return self.bytes[ofs:ofs + BYTES_PER_SECTOR]
         
-    def walk_sectors(self, track, sector, callback):
-        """Walks a chain of linked sectors, using the given callback."""
+    def walk_sectors(self, track, sector):
         sectors_seen = set()
 
         while track > 0:
@@ -102,21 +101,18 @@ class DiskImage(object):
             sectors_seen.add( (track, sector) )
             raw_bytes = self.get_sector(track, sector)
             track, sector = ord(raw_bytes[0]), ord(raw_bytes[1])
-            
-            callback(raw_bytes, track, sector)
+            yield raw_bytes, track, sector
             
     def read_file(self, track, sector):
         """Read file bytes from the given starting track/sector, assuming 
         the common "linked sectors" format used by CBM-DOS."""
+        
         file_bytes = list()
+        
+        for (block, t, s) in self.walk_sectors(track, sector):
+            byte_size = 254 if t > 0 else s
+            file_bytes.append(block[2:2+byte_size])
 
-        def cb(block, next_track, next_sector):
-            # If there is no next track, then the "sector"
-            # is actually the number of valid data bytes
-            data_count = 254 if next_track > 0 else next_sector
-            file_bytes.append(block[2:2+data_count])
-            
-        self.walk_sectors(track, sector, cb)
         return ''.join(file_bytes)
 
     def __str__(self):
@@ -180,16 +176,10 @@ class DosDisk(object):
             struct.unpack(STRUCT_HEADER, self.disk.get_sector(18,0))
             
         self.disk_name = self.raw_disk_name.strip('\xA0')
-        self.directory_sectors = list()
+        self.directory_sectors = [ DirectorySector(*x) 
+            for x in self.disk.walk_sectors(18, 1) ]
 
-        def cb(block, t, s):
-            self.directory_sectors.append(DirectorySector(block, t, s))
-
-        self.disk.walk_sectors(18, 1, cb)
-        
-        self.raw_entries = list()
-        for sector in self.directory_sectors:
-            self.raw_entries.extend(sector.entries)
+        self.raw_entries = [e for s in self.directory_sectors for e in s.entries]
     
     @property
     def entries(self):
