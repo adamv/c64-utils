@@ -1,0 +1,53 @@
+This document explains how to "detokenize" a C64 BASIC program.
+
+While C64 BASIC is specifically addressed, other CBM BASICs differ in small
+details, such as the default BASIC RAM address and the specific commands 
+(tokens) supported.
+
+
+Notes:
+    The 6510 is a little-endian CPU, which means that words 
+    (16-bit / 2-byte values) will typically appear low byte first.
+    
+Definitions:
+    Host - The "host computer" running a C64 emulator.
+    
+    
+
+File Format
+===========
+
+Overview
+--------
+
+A BASIC file is like any other PRG file, a load address followed by the exact
+bytes that were in memory at that address.
+
+[lo,hi] Load Address of this file, normally 2049.
+(...) BASIC program lines, each terminated with a 0.
+[0,0] Two zeros, signalling the end of the program
+(...) Possible extra non-BASIC bytes contained in this program.
+
+
+Load Address
+------------
+The first word of the file are the "load address" (lo/hi).
+
+For normal C64 BASIC programs, this will be $01,$80 = 2049, which is the 
+default start of BASIC program RAM. The SAVE command will always save this 
+address. A normal LOAD command will always load to this address, regardless
+of the actual value stored here.
+
+A non-standard load address can mean one of several things:
+* That the BASIC program was saved on a different CBM machine, which uses
+  a different load address.
+
+* The file is not a BASIC program, but a machine language program or
+  other data.
+  
+* The file is a specially-crafted assembly/BASIC hybrid, typically done to
+  implement auto-loading files.
+  
+
+BASIC Program Lines
+-------------------
