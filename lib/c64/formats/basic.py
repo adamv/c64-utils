@@ -18,8 +18,8 @@ class BasicVersion(object):
         self.description = description
         
 VERSIONS = (
-    BasicVersion(0x0801, "Basic 2", NONE, "Basic 2 - C64"),
-    BasicVersion(0, "Basic 7", NONE, "Basic 7 - C128"),
+    BasicVersion(0x0801, "Basic 2", None, "Basic 2 - C64"),
+    BasicVersion(0, "Basic 7", None, "Basic 7 - C128"),
     )
 
 

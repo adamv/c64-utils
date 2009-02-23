@@ -3,7 +3,7 @@
 from __future__ import with_statement
 
 import sys
-from c64.formats import d64, basic
+from c64.formats import d64, t64, basic
 
 def get_parser():
     from optparse import OptionParser
@@ -36,19 +36,26 @@ def directory(image_name):
     print
     print d.disk.bootsector
 
-def show_file(image_name, filename):
-    d = d64.load(image_name)
+def show_file(prg):
+    print
+    print "Load address:", prg.load_address
+    if prg.load_address != prg.BASIC_RAM:
+        print "(Non-standard load address, possible hybrid BASIC/ML program.)"
+    print prg.list()
+
+def extract_and_show(filename):
+    if image_name.endswith('.d64'):
+        loader = d64.load
+    elif image_name.endswith('.t64'):
+        loader = t64.load
+    else:
+        raise Exception, "Unknown image type '%s'" % (image_name, )
     
-    try:
-        prg = basic.Basic(d.find(filename))
-        
-        print
-        print "Load address:", prg.load_address
-        if prg.load_address != prg.BASIC_RAM:
-            print "(Non-standard load address, possible hybrid BASIC/ML program.)"
-        print prg.list()
-    except d64.FileNotFoundError, e:
-        print e
+    d = loader(image_name)
+    bytes = d.find(filename)
+    print "Size:", len(bytes)
+    prg = basic.Basic(bytes)
+    show_file(prg)
 
 
 USAGE = """
@@ -69,6 +76,10 @@ if __name__ == '__main__':
     if len(args) == 0:
         directory(image_name)
     elif len(args) == 1:
-        show_file(image_name, args[0])
+        filename = args.pop(0)
+        try:
+            extract_and_show(filename)
+        except Exception, e:
+            print e
     else:
         print USAGE

@@ -71,12 +71,13 @@ class T64(object):
 
     def file(self, i):
         """Return file bytes for entry at index i."""
-        return self.entries[i].bytes
+        e = self.entries[i]
+        return self.bytes[e.start:e.end+1]
         
     def find(self, filename, ignore_case=False):
         for e in self.entries:
             if e.name == filename:
-                return e.bytes
+                return self.bytes[e.start:e.end+1]
         raise FileNotFoundError, 'File "%s" not found on tape.' % (filename)
     
 
