@@ -12,7 +12,6 @@ from gdis.opcodes import *
 from gdis.blocks import *
 
 
-
 def get_parser():
     from optparse import OptionParser
 

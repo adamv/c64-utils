@@ -1,4 +1,5 @@
 from c64.formats import format_bytes
+import c64.bytestream
 
 # C128 Boot Sector information:
 #   http://www.atarimagazines.com/creative/v11n8/98_A_quick_quo_vadis_the_C1.php
@@ -16,7 +17,7 @@ class BootSector(object):
         self.is_valid = bytes.startswith('CBM')
         
         if self.is_valid:
-            s = ByteStream(bytes[3:])
+            s = c64.bytestream.ByteStream(bytes[3:])
             self.load_address = s.word()
             self.bank = s.byte()
             self.disk_block = s.byte() # What?
