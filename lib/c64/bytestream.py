@@ -7,6 +7,10 @@ class ByteStream(object):
         self.bytes = s
         self.pos = 0
         
+    def reset(self, offset=0):
+        "Reset the internal stream position to the given `offset`."
+        self.pos = offset
+        
     def word(self):
         "Read the next two bytes from the stream, and convert them to an integer (little-endian)."
         lo = ord(self.bytes[self.pos])
