@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"A 6502 disassembler, designed for use with C64 programs."
 from __future__ import with_statement
 import sys
 import os
@@ -100,9 +101,7 @@ def read_all_symbols(filenames):
 
     return s
 
-def main():
-    options, args = get_parser().parse_args()
-    
+def disassemble(options, args):
     symbols = read_all_symbols(options.symbol_files)
 
     data_ranges = ()
@@ -177,6 +176,10 @@ def main():
     # Output!
     for b in blocks:
         print b
+
+def main():
+    options, args = get_parser().parse_args()
+    disassemble(options, args)
 
 if __name__ == "__main__":
     main()
