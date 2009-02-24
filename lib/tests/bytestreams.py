@@ -59,9 +59,13 @@ class ByteStreamTests(unittest.TestCase):
         
     def test_read_chars(self):
         b = ByteStream('adam michael vandenberg')
+        
         s = b.chars(8)
         self.assertEquals('adam mic', s)
-            
+        
+        s = b.chars(8)
+        self.assertEquals('hael van', s)
+
 
 if __name__ == "__main__":
     unittest.main()  
