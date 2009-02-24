@@ -2,7 +2,7 @@
 from __future__ import with_statement
 
 import unittest
-from c64.formats import ByteStream
+from c64.bytestream import ByteStream
 
 
 class ByteStreamTests(unittest.TestCase):

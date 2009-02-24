@@ -5,9 +5,13 @@ import os
 import re
 import itertools
 
-from c64.formats import ByteStream
+import c64.bytestream
+import c64.formats.basic
+
 from gdis.opcodes import *
 from gdis.blocks import *
+
+
 
 def get_parser():
     from optparse import OptionParser
@@ -46,6 +50,8 @@ def get_parser():
         help="Provide a load address, overriding one in the header if used.")
     opt("-n", "--noheader", action="store_false", dest="use_header_address",
         help="Input file has no 2 byte load address header.")
+    opt("-b", '--basic', action="store_true", dest="basic_header",
+        help="Try to parse a BASIC program header before ML.")
         
     opt("-s", "--symbols", dest="symbol_files", action="callback", callback=vararg_callback, default=())
         
@@ -56,15 +62,14 @@ def read_symbols(filename):
     def rel(path):
         return os.path.join(os.path.dirname(__file__), path)
 
-    def useful(f):
-        for x in f:
+    def useful(lines):
+        for x in lines:
             x = x.strip()
             if x and x[0] not in (';', '#'):
                 yield x
     
     # CINT    = $ff81 ; Initialize screen editor and video chip
     re_symbol = r"(\w+)\s*=\s*\$(\S+)(?:\s*;\s*(.*))?"
-    symbols = list() # Will be a list of tuples (name, value, comment)
     
     # Symbol files with no extension are read from built-ins in "headers"
     if '.' not in filename:
@@ -79,6 +84,7 @@ def read_symbols(filename):
         print 'Error reading file \"'+filename+'\"'
         return ()
         
+    symbols = list() # Will be a list of tuples (name, value, comment)
     for x in useful(lines):
         m = re.match(re_symbol, x)
         if m:
@@ -87,21 +93,29 @@ def read_symbols(filename):
             symbols.append(s)
 
     return symbols
+    
+def read_all_symbols(filenames):
+    "Return a list of tuples (name, value, comment) read from a symbol file."
+    s = list() 
+    for f in filenames:
+        s.extend(read_symbols(f))
 
+    return s
 
 def main():
     options, args = get_parser().parse_args()
+    
+    if options.basic_header:
+        print "BASIC header parsing not implemented."
+        print
 
-    symbols = list() # Will be a list of tuples (name, value, comment)
-    for f in options.symbol_files:
-        symbols.extend(read_symbols(f))
+    symbols = read_all_symbols(options.symbol_files)
 
     data_ranges = ()
     comments_before = ()
     comments_before = sorted(comments_before, key=lambda x: x.address.addr)
 
-    with open(options.input_filename, 'rb') as f:
-        r = ByteStream(f.read())
+    r = c64.bytestream.load(options.input_filename)
 
     if options.address is None: # if has_start_adress_header:
         start_address = r.word()

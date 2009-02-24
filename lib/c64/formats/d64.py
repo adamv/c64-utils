@@ -1,9 +1,12 @@
 """This module provides support for reading "D64" disk images."""
 
 from __future__ import with_statement
+
 import struct
+
 from c64 import struct_doc, blocks
-from c64.formats import ByteStream, format_bytes
+import c64.bytestream
+from c64.formats import format_bytes
 from c64.formats.bootsector import BootSector
 
 BYTES_PER_SECTOR = 256

@@ -1,4 +1,4 @@
-from c64.formats import ByteStream, format_bytes
+from c64.formats import format_bytes
 
 # C128 Boot Sector information:
 #   http://www.atarimagazines.com/creative/v11n8/98_A_quick_quo_vadis_the_C1.php

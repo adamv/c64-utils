@@ -15,12 +15,12 @@ class OpCode(object):
             return ''
         
     def write(self, operand):
-        if '*' in self.syntax:
-            f = self.syntax.replace('*', self.format_operand(operand))
-            l = '; '+operand.label if operand.label else ''
-            return '%s %s %s' % (self.name, f, l)
-        else:            
+        if '*' not in self.syntax:
             return self.name
+            
+        f = self.syntax.replace('*', self.format_operand(operand))
+        l = '; '+operand.label if operand.label else ''
+        return '%s %s %s' % (self.name, f, l)
     
     def read_operand(self, r):
         if self.bytes == 2:
