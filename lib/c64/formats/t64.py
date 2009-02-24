@@ -57,8 +57,7 @@ class T64(object):
         
         self.entries = [
             TapeEntry(x) for x in
-            blocks(self.bytes, 0x20, offset=0x40, max=self.directory_size)
-        ]
+            blocks(self.bytes, 0x20, offset=0x40, max=self.directory_size) ]
         
     def _validate(self):
         if not self.bytes.startswith('C64'):
@@ -79,7 +78,7 @@ class T64(object):
             if e.name == filename:
                 return self.bytes[e.start:e.end+1]
         raise FileNotFoundError, 'File "%s" not found on tape.' % (filename)
-    
+
 
 def load(filename):
     with open(filename) as f:
