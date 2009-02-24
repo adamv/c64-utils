@@ -6,6 +6,9 @@ dir.py <filename.d64> <file-on-dsk>
     
 c64\
     D64, T64, BASIC, etc. support modules.
+    
+gdis\
+    6502 Disassembler
 
 1984-05.d64
     COMPUTE!'s Gazette disk, used for testing.
