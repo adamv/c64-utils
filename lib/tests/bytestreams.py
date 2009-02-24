@@ -66,6 +66,19 @@ class ByteStreamTests(unittest.TestCase):
         s = b.chars(8)
         self.assertEquals('hael van', s)
 
+    def test_reset(self):
+        b = ByteStream('adam michael vandenberg')
+        # Read some data and discard them
+        b.chars(10)
+        # Then reset and try reading the first 8 chars again
+        b.reset()
+        s = b.chars(8)
+        self.assertEquals('adam mic', s)
+        # Reset to an internal position and read the rest
+        b.reset(13)
+        r = b.rest()
+        self.assertEquals('vandenberg', r)
+
 
 if __name__ == "__main__":
     unittest.main()  
