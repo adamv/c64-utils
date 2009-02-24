@@ -45,14 +45,21 @@ def get_parser():
     op('-i', '--input', action='store', dest='input_filename')
     op('-a', '--addr', action='store', dest='address', default=None,
         help='Provide a load address, overriding one in the header if used.')
+        
     op('-n', '--noheader', action='store_false', dest='use_header_address',
         help='Input file has no 2 byte load address header.')
+        
     op('-b', '--basic', action='store_true', dest='basic_header',
         help='Try to parse a BASIC program header before ML.')
+        
     op('-o', '--offset', type='int', dest='offset', default=0,
         help='Offset at which to start disassembly.')
+        
     op('-d', '--data', default=None,
-        help='A Python list-of-2-tuples that defines data blocks; will be moved to a config file format.')
+        help='A Python list of tuples that defines data blocks; will be moved to a config file format.')
+        
+    op('-c', '--comments', default=None,
+        help='A Python list of ("address", "comment") tuples; will be moved to a config file format.')
     
     op('-s', '--symbols', dest='symbol_files', action='callback', callback=vararg_callback, default=())
         
@@ -111,12 +118,18 @@ def read_all_data(data):
     # that define data blocks
     # Address is passed as a hex-string with no 0x, so covert to an int
     return [ (int(x[0].lstrip('$'),16), x[1], x[2]) for x in eval(data) ]
+    
+def read_all_comments(comments):
+    if not comments:
+        return list()
+        
+    return [Comment(int(x[0].lstrip('$'),16), x[1]) for x in eval(comments)]
 
 def disassemble(options, args):
     symbols = read_all_symbols(options.symbol_files)
     data_ranges = read_all_data(options.data)
 
-    comments_before = list()
+    comments_before = read_all_comments(options.comments) #list()
 
     r = c64.bytestream.load(options.input_filename)
 
