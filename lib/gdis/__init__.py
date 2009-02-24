@@ -85,18 +85,15 @@ def disassemble(options, args):
 
     r = c64.bytestream.load(options.input_filename)
 
-    if options.address is None: # if has_start_adress_header:
-        start_address = r.word()
-    else:
-        start_address = int(options.address, 16)
+    start_address = r.word() if not options.address else int(options.address, 16)
 
-    address = start_address
     blocks = list()
     
     # Parse BASIC header, if requested
     basic_listing = parse_basic_header(options, r)
 
     # Now parse out ML
+    address = start_address
     
     # Jump to the offset if specified
     if options.offset:
@@ -159,6 +156,7 @@ def disassemble(options, args):
 
 def main():
     from gdis.args import parse_args
+
     options, args = parse_args()
     disassemble(options, args)
 
