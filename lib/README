@@ -1,9 +1,12 @@
 dir.py <filename.d64>
     Displays a directory listing for the given 1541 disk image.
     
-dir.py <filename.d64> <file-on-dsk>
+dir.py <filename.d64> <file-on-disk>
     Detokenizes a BASIC program on a disk image.
     
+dir.py <filename.d64> <file-on-disk> -e
+    Saves the given file to <file-on-disk>.prg
+
 c64\
     D64, T64, BASIC, etc. support modules.
     
