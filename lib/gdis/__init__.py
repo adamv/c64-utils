@@ -39,20 +39,19 @@ def get_parser():
         setattr(parser.values, option.dest, value)
 
     p = OptionParser()
-    opt = p.add_option
+    op = p.add_option
 
-    opt("-q", "--quiet", action="store_false", dest="verbose", default=True, 
-        help="don't print status messages to stdout")
-        
-    opt("-i", "--input", action="store", dest="input_filename")
-    opt("-a", "--addr", action="store", dest="address", default=None,
-        help="Provide a load address, overriding one in the header if used.")
-    opt("-n", "--noheader", action="store_false", dest="use_header_address",
-        help="Input file has no 2 byte load address header.")
-    opt("-b", '--basic', action="store_true", dest="basic_header",
-        help="Try to parse a BASIC program header before ML.")
-        
-    opt("-s", "--symbols", dest="symbol_files", action="callback", callback=vararg_callback, default=())
+    op('-i', '--input', action='store', dest='input_filename')
+    op('-a', '--addr', action='store', dest='address', default=None,
+        help='Provide a load address, overriding one in the header if used.')
+    op('-n', '--noheader', action='store_false', dest='use_header_address',
+        help='Input file has no 2 byte load address header.')
+    op('-b', '--basic', action='store_true', dest='basic_header',
+        help='Try to parse a BASIC program header before ML.')
+    op('-o', '--offset', type='int', dest='offset', default=0,
+        help='Offset at which to start disassembly.')
+    
+    op('-s', '--symbols', dest='symbol_files', action='callback', callback=vararg_callback, default=())
         
     return p
 
@@ -104,10 +103,6 @@ def read_all_symbols(filenames):
 def main():
     options, args = get_parser().parse_args()
     
-    if options.basic_header:
-        print "BASIC header parsing not implemented."
-        print
-
     symbols = read_all_symbols(options.symbol_files)
 
     data_ranges = ()
@@ -123,6 +118,17 @@ def main():
 
     address = start_address
     blocks = list()
+    
+    basic_listing = ""
+    # Try parsing out BASIC, if requested
+    if options.basic_header:
+        b = c64.formats.basic.Basic(r.rest(), False)
+        basic_listing = b.list()
+        
+    # Now parse out ML
+    # Skip the offset
+    r.chars(options.offset)
+    address += options.offset
     while not r.eof():
         found_data_block = False
         
@@ -163,6 +169,10 @@ def main():
 
     print "Load address: $%04X" % (start_address)
     print
+    if basic_listing:
+        print "BASIC header:"
+        print basic_listing
+        print
 
     # Output!
     for b in blocks:

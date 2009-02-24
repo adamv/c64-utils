@@ -2,6 +2,7 @@
 
 from basic_tokens import *
 from c64.formats import *
+import c64.bytestream
 
 def map_quoted_char(c):
     if 32 <= c <= 95:
@@ -28,7 +29,7 @@ class Basic(object):
     
     def __init__(self, bytes, has_header=True):
         """Initialize a Basic object from the given bytes."""
-        self.bytes = ByteStream(bytes)
+        self.bytes = c64.bytestream.ByteStream(bytes)
         
         self.load_address = self.BASIC_RAM
         # Skip the first two "program location" bytes if there is a header.
@@ -70,8 +71,8 @@ class Basic(object):
             prg.append(''.join(line))
         
         if not self.bytes.eof():
-            ml_bytes = self.bytes.rest()
-            prg.append("\n%d more bytes beyond end of BASIC program." % (len(ml_bytes)))
-            prg.append("%s" % format_bytes(ml_bytes))
+            self.ml_bytes = self.bytes.rest()
+            prg.append("\n%d more bytes beyond end of BASIC program:" % (len(self.ml_bytes)))
+            prg.append("%s" % format_bytes(self.ml_bytes))
             
         return '\n'.join(prg)
