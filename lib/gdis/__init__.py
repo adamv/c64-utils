@@ -66,24 +66,25 @@ def read_symbols(filename):
     re_symbol = r"(\w+)\s*=\s*\$(\S+)(?:\s*;\s*(.*))?"
     symbols = list() # Will be a list of tuples (name, value, comment)
     
+    # Symbol files with no extension are read from built-ins in "headers"
     if '.' not in filename:
         filename = rel('headers/'+filename+'.s')
         
     print "Reading symbols from",filename
     
     try:
-        f = open(filename)
+        with open(filename) as f:
+            lines = f.readlines()
     except IOError:
         print 'Error reading file \"'+filename+'\"'
         return ()
         
-    with f:
-        for line in useful(f):
-            m = re.match(re_symbol, line)
-            if m:
-                s = list(m.groups())
-                s[1] = int(s[1], 16)
-                symbols.append(s)
+    for x in useful(lines):
+        m = re.match(re_symbol, x)
+        if m:
+            s = list(m.groups())
+            s[1] = int(s[1], 16)
+            symbols.append(s)
 
     return symbols
 
@@ -112,7 +113,7 @@ def main():
     while not r.eof():
         found_data_block = False
         
-        # if in data range...
+        # if in a data range...
         for x in data_ranges:
             if x[0] == address:
                 data = r.chars(x[1]-x[0]+1)
