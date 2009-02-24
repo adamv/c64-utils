@@ -1,4 +1,6 @@
-
+Basic:
 * Upper/lower in quoted strings (instead of showing uppercase chars as hex and lowercase chars as upper)
 * Add spaces for readbility between tokens
 
+Gdis:
+* Should data blocks be offset or address to len or end address?
