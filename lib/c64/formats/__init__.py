@@ -36,12 +36,13 @@ class ByteStream(object):
         return lo
         
     def chars(self, n):
+        "Return the next n bytes from the stream as a string."
         s = self.bytes[self.pos:self.pos+n]
         self.pos += n
         return s
         
     def rest(self):
-        "Return the unread bytes from this stream."
+        "Return the unread bytes from this stream, but do not advance the stream position."
         return self.bytes[self.pos:]
         
     def dump(self):
