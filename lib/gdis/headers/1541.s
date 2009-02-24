@@ -1,0 +1,5 @@
+
+STACK_BASE = $0100
+VIA1B = $1800
+VIA2B = $1C00 ; Drive motor control
+AUX_CONTROL = $1C0C
