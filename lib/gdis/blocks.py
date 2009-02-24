@@ -1,7 +1,7 @@
 class Address(object):
-    def __init__(self, addr):
+    def __init__(self, addr, label=None):
         self.addr = addr
-        self.label = None
+        self.label = label
         
     def __str__(self):
         if self.label:

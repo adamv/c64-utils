@@ -3,6 +3,7 @@ class Program(object):
     def __init__(self, start_address):
         self.blocks = list()
         self.start_address = start_address
+        self.basic_listing = ""
 
     def addblock(self, block):
         self.blocks.append(block)

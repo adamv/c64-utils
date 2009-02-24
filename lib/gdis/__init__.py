@@ -51,6 +51,8 @@ def get_parser():
         help='Try to parse a BASIC program header before ML.')
     op('-o', '--offset', type='int', dest='offset', default=0,
         help='Offset at which to start disassembly.')
+    op('-d', '--data', default=None,
+        help='A Python list-of-2-tuples that defines data blocks; will be moved to a config file format.')
     
     op('-s', '--symbols', dest='symbol_files', action='callback', callback=vararg_callback, default=())
         
@@ -94,7 +96,7 @@ def read_symbols(filename):
     return symbols
     
 def read_all_symbols(filenames):
-    "Return a list of tuples (name, value, comment) read from a symbol file."
+    "Return a list of tuples (name, value, comment) read from given symbol filenames."
     s = list() 
     for f in filenames:
         s.extend(read_symbols(f))
@@ -105,8 +107,14 @@ def disassemble(options, args):
     symbols = read_all_symbols(options.symbol_files)
 
     data_ranges = ()
-    comments_before = ()
-    comments_before = sorted(comments_before, key=lambda x: x.address.addr)
+    if options.data:
+        # data_ranges will end up as a list of (start-address, len, comment) tuples
+        # that define data blocks
+        stuff = eval(options.data)
+        # Address is passed as a hex-string with no 0x, so covert to an int
+        data_ranges = [(int(x[0],16), x[1], x[2]) for x in stuff]
+    
+    comments_before = list()
 
     r = c64.bytestream.load(options.input_filename)
 
@@ -119,24 +127,32 @@ def disassemble(options, args):
     blocks = list()
     
     basic_listing = ""
+
     # Try parsing out BASIC, if requested
     if options.basic_header:
         b = c64.formats.basic.Basic(r.rest(), False)
         basic_listing = b.list()
         
     # Now parse out ML
-    # Skip the offset
-    r.chars(options.offset)
+    
+    # Jump to the offset if specified
+    if options.offset:
+        r.reset(options.offset)
+
     address += options.offset
     while not r.eof():
+        # print address, r.pos, data_ranges[0]
         found_data_block = False
         
         # if in a data range...
         for x in data_ranges:
             if x[0] == address:
-                data = r.chars(x[1]-x[0]+1)
+                data = r.chars(x[1])
                 blocks.append(AsciiData(address, data))
-                address = x[1]+1
+                comments_before.append(Comment(address, x[2]))
+                
+                address += x[1]
+                
                 found_data_block = True
                 break
     
@@ -164,6 +180,7 @@ def disassemble(options, args):
         b.pull_labels(symbols)
 
     # Merge comments
+    comments_before = sorted(comments_before, key=lambda x: x.address.addr)
     blocks = sorted(itertools.chain(comments_before, blocks), key=lambda x: x.address.addr)
 
     print "Load address: $%04X" % (start_address)
