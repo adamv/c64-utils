@@ -102,18 +102,20 @@ def read_all_symbols(filenames):
         s.extend(read_symbols(f))
 
     return s
+    
+def read_all_data(data):
+    if not data:
+        return ()
+
+    # data_ranges will end up as a list of (start-address, len, comment) tuples
+    # that define data blocks
+    # Address is passed as a hex-string with no 0x, so covert to an int
+    return [ (int(x[0].lstrip('$'),16), x[1], x[2]) for x in eval(data) ]
 
 def disassemble(options, args):
     symbols = read_all_symbols(options.symbol_files)
+    data_ranges = read_all_data(options.data)
 
-    data_ranges = ()
-    if options.data:
-        # data_ranges will end up as a list of (start-address, len, comment) tuples
-        # that define data blocks
-        stuff = eval(options.data)
-        # Address is passed as a hex-string with no 0x, so covert to an int
-        data_ranges = [(int(x[0],16), x[1], x[2]) for x in stuff]
-    
     comments_before = list()
 
     r = c64.bytestream.load(options.input_filename)
@@ -132,14 +134,14 @@ def disassemble(options, args):
     if options.basic_header:
         b = c64.formats.basic.Basic(r.rest(), False)
         basic_listing = b.list()
-        
+
     # Now parse out ML
     
     # Jump to the offset if specified
     if options.offset:
         r.reset(options.offset)
+        address += options.offset-2 # Jump back 2 bytes for load header; FIXME
 
-    address += options.offset
     while not r.eof():
         # print address, r.pos, data_ranges[0]
         found_data_block = False
