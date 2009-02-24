@@ -15,3 +15,6 @@ gdis\
 
 1984-05.d64
     COMPUTE!'s Gazette disk, used for testing.
+
+. p.sh
+    Run gdis on "PRODOS.prg" with some inputs.
