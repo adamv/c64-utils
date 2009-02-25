@@ -31,7 +31,7 @@ bytes that were in memory at that address.
 
 Load Address
 ------------
-The first word of the file are the "load address" (lo/hi).
+The first word of the file is the "load address" (lo/hi).
 
 For normal C64 BASIC programs, this will be $01,$80 = 2049, which is the 
 default start of BASIC program RAM. The SAVE command will always save this 
@@ -51,3 +51,39 @@ A non-standard load address can mean one of several things:
 
 BASIC Program Lines
 -------------------
+[lo, hi]    Pointer to next BASIC line in memory, or $0000 to signal
+            the end of the program.
+[lo, hi]    The line number for this program line.
+(...)       A single line, containing BASIC tokens and ASCII characters.
+[0]         A single zero byte, signalling the end of the line.
+
+A basic program line begins with a word pointer to the next line in memory.
+These pointers are in the in-memory representation of a BASIC program, and 
+SAVE'ing writes them out to disk as-is.
+
+If the link pointer is $0000, two zero bytes, then we've reached the end of
+the program and stop parsing.
+
+The individual bytes in a program line are either BASIC tokens or ASCII characters.
+BASIC tokens always have the high bit set, so will always be >= $80.
+
+If an ASCII quote is found, then "quote mode" is entered and all subsequent bytes
+are interpreted as ASCII characters (including CBM control characters) until a
+terminating quote is found.
+
+A single zero byte terminates this line.
+
+The end of a BASIC program will have three zero bytes in a row, one to
+terminate the final line, and then two more as the next link pointer.
+
+
+A single program line must be less than 256 bytes long or it will not 
+load correctly. The CBM editor only allows you to enter lines up to 80 
+characters (two screen lines) long. You can enter a longer line manually
+if you use the command abbreviations, but those lines cannot be easily
+re-edited later.
+
+There also exist "cruncher" programs that can take a BASIC program and 
+"crunch" it down to the most bytes per line possible without changing
+the logic flow. (Since CBM Basic 2 is pretty, well, basic, that means simply
+paying attention to GOTO/GOSUB targets.)
