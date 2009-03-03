@@ -9,8 +9,6 @@ import c64.bytestream
 from c64.formats import format_bytes
 from c64.formats.bootsector import BootSector
 
-BYTES_PER_SECTOR = 256
-
 class CircularFileError(Exception): pass
 class FileNotFoundError(Exception): pass
 class FormatError(Exception): pass
@@ -59,6 +57,8 @@ class DiskImage(object):
     except for being able to walk a chain of linked sectors.
     """
 
+    BYTES_PER_SECTOR = 256
+
     sectors_per_track = (
         0, # Track numbering starts at 1
         21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
@@ -88,11 +88,11 @@ class DiskImage(object):
     def get_byte_offset(self, track, sector):
         "Return the byte-offset of the given sector."
         ofs = sector + sum(self.sectors_per_track[i] for i in range(1,track))
-        return ofs * BYTES_PER_SECTOR
+        return ofs * self.BYTES_PER_SECTOR
     
     def get_sector(self, track, sector):
         ofs = self.get_byte_offset(track, sector)
-        return self.bytes[ofs:ofs + BYTES_PER_SECTOR]
+        return self.bytes[ofs:ofs + self.BYTES_PER_SECTOR]
         
     def walk_sectors(self, track, sector):
         sectors_seen = set()
