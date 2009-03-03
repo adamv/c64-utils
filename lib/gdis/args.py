@@ -52,5 +52,8 @@ def parse_args():
         help='A Python list of ("address", "comment") tuples; will be moved to a config file format.')
     
     op('-s', '--symbols', dest='symbol_files', action='callback', callback=vararg_callback, default=())
+    
+    op('--bootsector', dest='bootsector', action='store_true',
+        help='Treat the input as a C128 bootsector.')
 
     return p.parse_args()    

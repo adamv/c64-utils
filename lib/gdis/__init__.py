@@ -7,7 +7,7 @@ import re
 import itertools
 
 import c64.bytestream
-import c64.formats.basic
+from c64.formats import basic, bootsector
 
 from gdis.opcodes import *
 from gdis.blocks import *
@@ -17,7 +17,7 @@ def parse_basic_header(options, r):
     if not options.basic_header:
         return ""
 
-    b = c64.formats.basic.Basic(r.rest(), False)
+    b = basic.Basic(r.rest(), False)
     return b.list()
 
 
@@ -31,7 +31,8 @@ def read_symbols(filename):
             if x and x[0] not in (';', '#'):
                 yield x
     
-    # CINT    = $ff81 ; Initialize screen editor and video chip
+    # Sample symbol file line:
+    #   CINT    = $ff81 ; Initialize screen editor and video chip
     re_symbol = r"(\w+)\s*=\s*\$(\S+)(?:\s*;\s*(.*))?"
     
     # Symbol files with no extension are read from built-ins in "headers"
@@ -62,6 +63,10 @@ def read_all_symbols(filenames):
         s.extend(read_symbols(f))
 
     return s
+
+def sym_to_int(d):
+    """Convert an ASM hex to an integer."""
+    return int(d.lstrip('$'),16)
     
 def read_all_data(data):
     if not data:
@@ -70,13 +75,13 @@ def read_all_data(data):
     # data_ranges will end up as a list of (start-address, len, comment) tuples
     # that define data blocks
     # Address is passed as a hex-string with no 0x, so covert to an int
-    return [ (int(x[0].lstrip('$'),16), x[1], x[2]) for x in eval(data) ]
+    return [ (sym_to_int(x[0]), x[1], x[2]) for x in eval(data) ]
     
 def read_all_comments(comments):
     if not comments:
         return list()
         
-    return [Comment(int(x[0].lstrip('$'),16), x[1]) for x in eval(comments)]
+    return [Comment(sym_to_int(x[0]), x[1]) for x in eval(comments)]
 
 def disassemble(options, args):
     symbols = read_all_symbols(options.symbol_files)
@@ -85,12 +90,24 @@ def disassemble(options, args):
 
     r = c64.bytestream.load(options.input_filename)
 
-    start_address = r.word() if not options.address else int(options.address, 16)
+    if options.address:
+        start_address = int(options.address, 16)
+    elif options.bootsector:
+        start_address = 0
+    else:
+        start_address = r.word()
 
     blocks = list()
     
     # Parse BASIC header, if requested
     basic_listing = parse_basic_header(options, r)
+    
+    boot = ""
+    if options.bootsector:
+        bs = bootsector.BootSector(r.rest())
+        boot = str(bs)
+        start_address = bs.load_address or 0x0B00
+        r = c64.bytestream.ByteStream(bs.code)
 
     # Now parse out ML
     address = start_address
@@ -148,6 +165,11 @@ def disassemble(options, args):
     if basic_listing:
         print "BASIC header:"
         print basic_listing
+        print
+        
+    if boot:
+        print "Boot Sector:"
+        print boot
         print
 
     # Output!
