@@ -4,11 +4,7 @@ from basic_tokens import *
 from c64.formats import *
 import c64.bytestream
 
-def map_quoted_char(c):
-    if 32 <= c <= 95:
-        return chr(c)
-    else:
-        return CONTROL_MAP.get(c, "{$%02x}" % (c))
+from c64.formats.petscii import quote_petscii
 
 class BasicVersion(object):
     """Describes a BASIC version."""
@@ -53,7 +49,7 @@ class Basic(object):
             
             line = [str(line_number), ' ']
             quote_mode = False
-            
+
             # Parse this line...
             while True:
                 c = self.bytes.byte()
@@ -67,11 +63,11 @@ class Basic(object):
                 elif not quote_mode and 0x80 <= c:
                     # Parse an opcode token; they have the high bit set
                     opcode = TOKEN_MAP.get(c, "{UNKNOWN}")
-                    saw_unknown_opcode = True
+                    saw_unknown_opcode = saw_unknown_opcode or opcode == '{UNKNOWN}'
                     line.append(opcode)
                 else:
                     # Convert a "PETSCII" to host ASCII
-                    line.append(map_quoted_char(c))
+                    line.append(quote_petscii(c))
                  
             prg.append(''.join(line))
         

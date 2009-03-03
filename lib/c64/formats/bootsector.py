@@ -32,6 +32,7 @@ class BootSector(object):
         if self.is_valid:
             s.append("Disk name: %s" % (self.diskname or "<None>"))
             s.append("File name: %s" % (self.filename or "<None>"))
+            s.append("Probable ML address: $%04x" % (self.code_offset + 0x0B00))
             s.append("Program bytes: (...)")
             #s.append("%s" % format_bytes(self.code))
             
