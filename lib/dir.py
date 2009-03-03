@@ -91,14 +91,26 @@ def main():
         try:
             loader = get_loader(image_name)
             d = loader(image_name)
-        
-            filename = args.pop(0)
-            bytes = d.find(filename)
             
-            if options.extract:
-                extract_file(filename, bytes)
+            if options.sector:
+                if not options.extract:
+                    print USAGE
+                    return
+
+                t,s = options.sector.split(',')
+                t = int(t)
+                s = int(s)
+                
+                bytes = d.disk.get_sector(t,s)
+                extract_file('bootsector', bytes)
             else:
-                show_basic(filename, bytes)
+                filename = args.pop(0)
+                bytes = d.find(filename)
+            
+                if options.extract:
+                    extract_file(filename, bytes)
+                else:
+                    show_basic(filename, bytes)
         except Exception, e:
             print e
             
