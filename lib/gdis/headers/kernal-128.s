@@ -2,6 +2,8 @@
 
 MMU_REGS = $ff00 ; MMU register, visible in all banks
 
+GO64 = $E24B ; Code to enter C64 mode
+
 ; Prefix "Kernal"
 RAMTAS = $fd50 ; Perform RAM test and set pointers to top and bottom of RAM
 RESTOR = $fd15 ; Restore RAM vectors for default I/O routines
