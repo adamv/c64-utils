@@ -3,3 +3,7 @@ This project is being developed:
 * with Python 2.5
 * using 0xED as a hex editor ( http://www.suavetech.com/0xed/0xed.html )
 * using Power64 as a C64 emulator ( http://www.infinite-loop.at/Power64/ )
+
+References:
+ * http://folkvagn.commodore64.org/C128_ROM_commented.html
+   C128 ROM disassembly
