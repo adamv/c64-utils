@@ -166,7 +166,6 @@ class DirectorySector(object):
         self.next_sector = (bytes[0], bytes[1])
         self.entries = [DirectoryEntry(x) for x in blocks(bytes, 32)]
 
-
 class DosDisk(object):
     """Represents a CBM-DOS formatted 1541 Disk Image."""
     
@@ -179,18 +178,15 @@ class DosDisk(object):
             struct.unpack(STRUCT_HEADER, self.disk.get_sector(18,0))
             
         self.disk_name = self.raw_disk_name.strip('\xA0')
-        self.directory_sectors = [ DirectorySector(*x) 
-            for x in self.disk.walk_sectors(18, 1) ]
+        self.directory_sectors = [DirectorySector(*x) 
+            for x in self.disk.walk_sectors(18, 1)]
 
         self.raw_entries = [e for s in self.directory_sectors for e in s.entries]
-    
-    @property
-    def entries(self):
-        return [e for e in self.raw_entries if e.size > 0]
+        self.entries = [e for e in self.raw_entries if e.size > 0]
             
     def file(self, i):
         """Return file bytes for entry at index i."""
-        e = list(self.entries)[i]
+        e = self.entries[i]
         return self.disk.read_file(e.track, e.sector)
         
     def find(self, filename, ignore_case=False):
