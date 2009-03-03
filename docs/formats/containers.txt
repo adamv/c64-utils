@@ -1,0 +1,18 @@
+There are various file formats commonly encountered in the C64 emulation 
+scene.
+
+The most common of these are T64 and D64, which are both "containers."
+T64 is a "virtual tape" format, where D64 is a byte-for-byte representation
+of an original 1541 formatted disk.
+
+Both T64 and D64 are containers in the sense that they are single "host" 
+files which contain multiple C64 files. (In the case of D64 images, the 
+contents may not even be CBM-DOS files at all.)
+
+There are also single-file formats, with .PRG and .CRT being the most common.
+
+A .PRG file is a host file that contains the bytes from a single CBM file.
+For a program, the first two bytes will be the load address, followed by
+actual program bytes.
+
+A .CRT file contains the bytes of a C64 cartridge.
