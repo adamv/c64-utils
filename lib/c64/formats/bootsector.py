@@ -15,6 +15,7 @@ class BootSector(object):
         self.bank = 0
         self.disk_block = 0
         self.is_valid = bytes.startswith('CBM')
+        self.code_offset = 0
         
         if self.is_valid:
             s = c64.bytestream.ByteStream(bytes[3:])
@@ -23,6 +24,7 @@ class BootSector(object):
             self.disk_block = s.byte() # What?
             self.diskname = s.read_until(0, keep=False)
             self.filename = s.read_until(0, keep=False)
+            self.code_offset = s.pos
             self.code = s.rest()
         
     def __str__(self):
