@@ -106,7 +106,7 @@ def disassemble(options, args):
     if options.bootsector:
         bs = bootsector.BootSector(r.rest())
         boot = str(bs)
-        start_address = bs.load_address or 0x0B00
+        start_address = bs.load_address or 0x0B00 + bs.code_offset
         r = c64.bytestream.ByteStream(bs.code)
 
     # Now parse out ML
