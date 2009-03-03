@@ -39,21 +39,25 @@ class Basic(object):
             self.load_address = self.bytes.word()
 
     def list(self):
+        saw_unknown_opcode = False
         prg = list()
+        line_numbers = list()
         
         while not self.bytes.eof():
             link = self.bytes.word()
             if link == 0:
                 break
-                
-            line = [str(self.bytes.word()), ' ']
+            
+            line_number = self.bytes.word()
+            line_numbers.append(line_number)
+            
+            line = [str(line_number), ' ']
             quote_mode = False
             
             # Parse this line...
             while True:
                 c = self.bytes.byte()
                 if c == 0:
-                    # 0 ends the line
                     break
                     
                 if c == 34:
@@ -63,6 +67,7 @@ class Basic(object):
                 elif not quote_mode and 0x80 <= c:
                     # Parse an opcode token; they have the high bit set
                     opcode = TOKEN_MAP.get(c, "{UNKNOWN}")
+                    saw_unknown_opcode = True
                     line.append(opcode)
                 else:
                     # Convert a "PETSCII" to host ASCII
@@ -72,7 +77,9 @@ class Basic(object):
         
         if not self.bytes.eof():
             self.ml_bytes = self.bytes.rest()
-            prg.append("\n%d more bytes beyond end of BASIC program:" % (len(self.ml_bytes)))
-            prg.append("%s" % format_bytes(self.ml_bytes))
+            n = len(self.ml_bytes)
+            s = 's' if n != 1 else ''
+            prg.append('\n%d more byte%s beyond end of BASIC program:' % (n, s))
+            prg.append('%s' % format_bytes(self.ml_bytes))
             
         return '\n'.join(prg)
