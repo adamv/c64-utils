@@ -1,4 +1,4 @@
-from c64.formats.petscii import quote_petscii
+from c64.formats.petscii import *
 
 class Address(object):
     def __init__(self, addr, label=None):
@@ -64,8 +64,7 @@ class AsciiData(DisassemblyBlock):
         return len(self.bytes)
 
     def __str__(self):
-        out = "".join(quote_petscii(c) for c in self.bytes)
-        return "$%04X .ascii \"%s\"" % (self.address, out)
+        return "$%04X .ascii \"%s\"" % (self.address, petscii_str(self.bytes))
 
 
 class DataByte(DisassemblyBlock):
