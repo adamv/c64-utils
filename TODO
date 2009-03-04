@@ -4,3 +4,6 @@ Basic:
 
 Gdis:
 * Should data blocks be offset or address to len or end address?
+
+Python 2.6:
+* Used named tuple for (track,sector) pairs?
