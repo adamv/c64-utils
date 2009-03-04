@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""This script does a code coverage test.
+
+Requires: http://nedbatchelder.com/code/modules/coverage.html
+"""
 import coverage
 import unittest
 import tests
