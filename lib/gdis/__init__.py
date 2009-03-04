@@ -106,7 +106,7 @@ def disassemble(options, args):
     if options.bootsector:
         bs = bootsector.BootSector(r.rest())
         boot = str(bs)
-        start_address = bs.load_address or 0x0B00 + bs.code_offset
+        start_address = bs.code_address
         r = c64.bytestream.ByteStream(bs.code)
 
     # Now parse out ML
@@ -178,7 +178,6 @@ def disassemble(options, args):
 
 def main():
     from gdis.args import parse_args
-
     options, args = parse_args()
     disassemble(options, args)
 

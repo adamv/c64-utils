@@ -99,7 +99,8 @@ class DiskImage(object):
 
         while track > 0:
             if (track, sector) in sectors_seen:
-                raise CircularFileError, "Circular file detected: %s, %s" % ((track, sector), sectors_seen)
+                raise CircularFileError, "Circular file detected: %s, %s" % (
+                    (track, sector), sectors_seen)
 
             sectors_seen.add( (track, sector) )
             raw_bytes = self.get_sector(track, sector)
@@ -119,7 +120,8 @@ class DiskImage(object):
         return ''.join(file_bytes)
 
     def __str__(self):
-        return "<D64 Disk image: %d bytes, %d tracks>" % (len(self.bytes), self.tracks)
+        return "<D64 Disk image: %d bytes, %d tracks>" % (
+            len(self.bytes), self.tracks)
 
 
 class DirectoryEntry(object):
@@ -197,6 +199,10 @@ class DosDisk(object):
     
     def __str__(self):
         return '<DosDisk "%s" "%s">' % (self.disk_name, self.disk_id)
+        
+    @property
+    def has_bootsector(self):
+        return self.disk.has_boot_sector
 
 
 def load(filename):

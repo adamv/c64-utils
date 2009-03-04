@@ -42,8 +42,9 @@ def directory(image_name):
     for e in d.entries:
         print '%-5u %-18s  %s  (%d,%d)' % (e.size, '"'+e.name+'"', e.format, e.track, e.sector)
         
-    print
-    print d.disk.bootsector
+    if d.has_bootsector:
+        print
+        print d.disk.bootsector
 
 def extract_file(filename, bytes):
     outname = filename+'.prg'
