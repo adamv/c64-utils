@@ -23,10 +23,11 @@ VERSIONS = (
 class Basic(object):
     BASIC_RAM = 0x0801
     
-    def __init__(self, bytes, has_header=True):
+    def __init__(self, bytes, has_header=True, show_ml_bytes=True):
         """Initialize a Basic object from the given bytes."""
         self.bytes = c64.bytestream.ByteStream(bytes)
-        
+        self.show_ml_bytes = show_ml_bytes
+
         self.load_address = self.BASIC_RAM
         # Skip the first two "program location" bytes if there is a header.
         # Might want to verify that they are $01,$80 -> $0801
@@ -76,6 +77,7 @@ class Basic(object):
             n = len(self.ml_bytes)
             s = 's' if n != 1 else ''
             prg.append('\n%d more byte%s beyond end of BASIC program:' % (n, s))
-            prg.append('%s' % format_bytes(self.ml_bytes))
+            if self.show_ml_bytes:
+                prg.append('%s' % format_bytes(self.ml_bytes))
             
         return '\n'.join(prg)

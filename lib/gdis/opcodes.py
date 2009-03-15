@@ -80,6 +80,7 @@ opcodes = (
     OpCode("CPY", 0xC0, 2, "#*"), 
     OpCode("CPY", 0xCC, 3, "*"), 
     OpCode("DEC", 0xDE, 3, "*,X"), 
+    OpCode("DEC", 0xC6, 2, "*"), 
     OpCode("DEC", 0xCE, 3, "*"), 
     OpCode("DEX", 0xCA, 1, ""), 
     OpCode("DEY", 0x88, 1, ""), 

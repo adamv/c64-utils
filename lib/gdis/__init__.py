@@ -7,7 +7,8 @@ import re
 import itertools
 
 import c64.bytestream
-from c64.formats import basic, bootsector
+from c64.formats import basic
+from c64.formats.cbmdos import BootSector
 
 from gdis.opcodes import *
 from gdis.blocks import *
@@ -17,7 +18,7 @@ def parse_basic_header(options, r):
     if not options.basic_header:
         return ""
 
-    b = basic.Basic(r.rest(), False)
+    b = basic.Basic(r.rest(), has_header=False, show_ml_bytes=False)
     return b.list()
 
 
@@ -104,7 +105,7 @@ def disassemble(options, args):
     
     boot = ""
     if options.bootsector:
-        bs = bootsector.BootSector(r.rest())
+        bs = BootSector(r.rest())
         boot = str(bs)
         start_address = bs.code_address
         r = c64.bytestream.ByteStream(bs.code)
