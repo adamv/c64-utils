@@ -9,7 +9,16 @@ class FileContaner(object):
     
     @property
     def entries(self):
-        """A list of entries in this container."""
+        """A list of entries in this container.
+        
+        Some containers may have "empty" entries. For instance,
+        a D64 directory sector may only have a few valid entries,
+        the rest being empty.
+        
+        The `entries` property contains only live entries.
+        There may be a `raw_entries` property that contains all
+        allocated entries, used and unused.
+        """
         return list()
     
     def file(self, i):

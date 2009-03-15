@@ -76,7 +76,7 @@ def read_all_data(data):
     # that define data blocks
     # Address is passed as a hex-string with no 0x, so covert to an int
     return [ (sym_to_int(x[0]), x[1], x[2]) for x in eval(data) ]
-    
+
 def read_all_comments(comments):
     if not comments:
         return list()

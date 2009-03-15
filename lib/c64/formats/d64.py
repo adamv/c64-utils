@@ -1,4 +1,4 @@
-"""This module provides support for reading "D64" disk images."""
+"""This module provides support for reading "D64" (1541) disk images."""
 
 from __future__ import with_statement
 
@@ -7,32 +7,7 @@ import struct
 from c64 import struct_doc, blocks
 import c64.bytestream
 from c64.formats import format_bytes
-from c64.formats.bootsector import BootSector
-
-class CircularFileError(Exception): pass
-class FileNotFoundError(Exception): pass
-class FormatError(Exception): pass
-class IllegalSectorError(Exception): pass
-
-FILE_TYPES = {
-    0: "DEL",
-    1: "SEQ",
-    2: "PRG",
-    3: "USR",
-    4: "REL",
-}
-
-
-STRUCT_ENTRY = struct_doc('''
-<      # Little-endian
-xx     # Track/Sector of next Directory Sector (or 0 if not first entry in sector)
-B      # File Type
-BB     # Track/Sector of first File Sector
-16s    # Filename, PET-ASCII, $A0 padded
-xxx    # RELative file data
-xxxxxx # Unused (except with GEOS disks)
-H      # File size in sectors
-''')
+from c64.formats.cbmdos import *
 
 STRUCT_HEADER = struct_doc('''
 <       # Little-endian
@@ -50,49 +25,53 @@ xxxx    # Shifted spaces ($A0)
 ''')
 
 
-class DiskImage(object):
-    """Represents the bytes of a D64 disk image used by C64 emulators.
+class D64_Description(object):
+    """Desribe the 1541 disk geometry and related CBM-DOS version."""
+    BYTES_PER_SECTOR = 256
     
-    This class can retreive sector data, but has no knowledge of file or directory formats
-    except for being able to walk a chain of linked sectors.
+    sector_counts = (
+        # (starting track, ending track, sectors in this track group)
+        (0,  0,  0),
+        (1,  17, 21),
+        (18, 24, 19),
+        (25, 30, 18),
+        (31, 35, 17))
+
+    DIRECTORY_HEADER = (18, 0)
+    DIRECTORY_ENTRIES = (18, 1)
+    
+    def __init__(self):
+        self.sectors_per_track = _make_sector_table(self.sector_counts)
+        self.tracks = len(self.sectors_per_track) - 1
+
+
+class DiskImage(object):
+    """Handle standard Commodore Disk Images.
+    
+    This base class can handle retreiving individual or track/sector chains
+    from a disk image, as described by `description`.
+    
+    This class has no specific knowledge of file or directory formats
+    (other than being able to follow track/sector chains.)
     """
 
-    BYTES_PER_SECTOR = 256
-
-    sectors_per_track = (
-        0, # Track numbering starts at 1
-        21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
-        19, 19, 19, 19, 19, 19, 19,
-        18, 18, 18, 18, 18, 18,
-        17, 17, 17, 17, 17,
-        17, 17, 17, 17, 17, # For extended disks.
-        )
-
-    def __init__(self, bytes):
+    def __init__(self, description, bytes):
+        self._desc = description()
         self.bytes = bytes
-        self._determine_tracks()
         self.bootsector = BootSector(self.get_sector(1,0))
 
     @property
-    def has_boot_sector(self):
+    def has_bootsector(self):
         return self.bootsector.is_valid
 
-    def _determine_tracks(self):
-        if len(self.bytes) == 174848:
-            self.tracks = 35
-        elif len(self.bytes) == 196608:
-            self.tracks = 40
-        else:
-            raise FormatError, "Cannot determine the number of tracks."
-    
     def get_byte_offset(self, track, sector):
         "Return the byte-offset of the given sector."
-        ofs = sector + sum(self.sectors_per_track[i] for i in range(1,track))
-        return ofs * self.BYTES_PER_SECTOR
+        ofs = sector + sum(self._desc.sectors_per_track[i] for i in range(1,track))
+        return ofs * self._desc.BYTES_PER_SECTOR
     
     def get_sector(self, track, sector):
         ofs = self.get_byte_offset(track, sector)
-        return self.bytes[ofs:ofs + self.BYTES_PER_SECTOR]
+        return self.bytes[ofs:ofs + self._desc.BYTES_PER_SECTOR]
         
     def walk_sectors(self, track, sector):
         sectors_seen = set()
@@ -120,68 +99,35 @@ class DiskImage(object):
         return ''.join(file_bytes)
 
     def __str__(self):
-        return "<D64 Disk image: %d bytes, %d tracks>" % (
-            len(self.bytes), self.tracks)
+        return "<Disk image: %d bytes, %d tracks>" % (
+            len(self.bytes), self._desc.tracks)
 
 
-class DirectoryEntry(object):
-    """Represents a single CBM-DOS directory entry."""
-    
-    def __init__(self, bytes):
-        self.bytes = bytes
-        
-        self.typeflags, self.track, self.sector, self.raw_name, self.size =\
-            struct.unpack(STRUCT_ENTRY, bytes)
-            
-        # Directory entries are padded to 16 characters with $A0.
-        # Strip these off so we can print the names.
-        self.name = self.raw_name.rstrip('\xa0')
-        
-    @property
-    def filetype(self):
-        return self.typeflags & 0x03
-        
-    @property
-    def format(self):
-        return FILE_TYPES[self.typeflags & 0x03]
-        
-    @property
-    def splat(self):
-        return self.typeflags & 0x80 == 0
-        
-    @property
-    def locked(self):
-        return self.typeflags & 0xC0
-        
-    def __str__(self):
-        return "<Directory Entry '%s' %d (%d,%d)>" %\
-            (self.name, self.size, self.track, self.sector)
-    
-
-class DirectorySector(object):
-    """Represents a CBM-DOS directory sector (with multiple entries.)"""
-    
-    def __init__(self, bytes, track, sector):
-        """Initialize this DirectorySector from a disk sector."""
-        self.bytes = bytes
-        self.location = (track, sector)
-        self.next_sector = (bytes[0], bytes[1])
-        self.entries = [DirectoryEntry(x) for x in blocks(bytes, 32)]
 
 class DosDisk(object):
     """Represents a CBM-DOS formatted 1541 Disk Image."""
-    
-    def __init__(self, disk):
+
+    DIRECTORY_HEADER = (18, 0)
+    DIRECTORY_ENTRIES = (18, 1)
+
+    def __init__(self, 
+            disk, 
+            header_sector=None, entries_sector=None, 
+            image_type='Abstract CBM DOS disk'):
+        
         self.disk = disk
         self._read_directory()
+        self.image_type = image_type
         
     def _read_directory(self):
         self.BAM, self.raw_disk_name, self.disk_id =\
-            struct.unpack(STRUCT_HEADER, self.disk.get_sector(18,0))
-            
+            struct.unpack(
+                STRUCT_HEADER,
+                self.disk.get_sector( *self.DIRECTORY_HEADER ))
+
         self.disk_name = self.raw_disk_name.strip('\xA0')
-        self.directory_sectors = [DirectorySector(*x) 
-            for x in self.disk.walk_sectors(18, 1)]
+        self.directory_sectors = [DirectorySector(*x)
+            for x in self.disk.walk_sectors( *self.DIRECTORY_ENTRIES )]
 
         self.raw_entries = [e for s in self.directory_sectors for e in s.entries]
         self.entries = [e for e in self.raw_entries if e.size > 0]
@@ -198,13 +144,14 @@ class DosDisk(object):
         raise FileNotFoundError, 'File "%s" not found on disk.' % (filename)
     
     def __str__(self):
-        return '<DosDisk "%s" "%s">' % (self.disk_name, self.disk_id)
+        return '<DosDisk: %s "%s" "%s">' % (
+            self.image_type, self.disk_name, self.disk_id)
         
     @property
     def has_bootsector(self):
-        return self.disk.has_boot_sector
+        return self.disk.has_bootsector
 
 
 def load(filename):
     with open(filename) as f:
-        return DosDisk(DiskImage(f.read()))
+        return DosDisk(DiskImage(D64_Description, f.read()))

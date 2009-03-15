@@ -103,7 +103,7 @@ def main():
                 s = int(s)
                 
                 bytes = d.disk.get_sector(t,s)
-                extract_file('bootsector', bytes)
+                extract_file('sector-%d-%d' % (t,s), bytes)
             else:
                 filename = args.pop(0)
                 bytes = d.find(filename)

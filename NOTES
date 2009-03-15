@@ -1,9 +1,12 @@
 This project is being developed:
 * on a MacBook Pro
 * with Python 2.5
-* using 0xED as a hex editor ( http://www.suavetech.com/0xed/0xed.html )
-* using Power64 as a C64 emulator ( http://www.infinite-loop.at/Power64/ )
+* using 0xED hex editor ( http://www.suavetech.com/0xed/0xed.html )
+* using Power64 C64 emulator ( http://www.infinite-loop.at/Power64/ )
 
 References:
- * http://folkvagn.commodore64.org/C128_ROM_commented.html
-   C128 ROM disassembly
+* http://folkvagn.commodore64.org/C128_ROM_commented.html
+  C128 ROM disassembly
+
+* http://www.baltissen.org/newhtm/diskimag.htm
+  CBM-DOS versions and structures

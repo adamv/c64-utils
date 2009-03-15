@@ -7,3 +7,10 @@ Gdis:
 
 Python 2.6:
 * Used named tuple for (track,sector) pairs?
+
+
+Disk formats:
+* Disk (drive) descriptions vs. DOS descriptions
+** DOS versions are tied to drives
+** A disk has a certain number of tracks and tracks-per-sector, and
+   related SECTOR locations.

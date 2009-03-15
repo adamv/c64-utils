@@ -1,4 +1,7 @@
-"""Code to handle conversions of bytes to PETSCII codes."""
+"""Code to handle conversions of bytes to PETSCII codes.
+
+http://en.wikipedia.org/wiki/PETSCII
+"""
 __all__ = ['quote_petscii', 'petscii_str']
 
 # Map of various CBM control codes to names.

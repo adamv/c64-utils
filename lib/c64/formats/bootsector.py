@@ -4,7 +4,6 @@ from c64.bytestream import ByteStream
 # C128 Boot Sector information:
 #   http://www.atarimagazines.com/creative/v11n8/98_A_quick_quo_vadis_the_C1.php
 
-
 # C128 address where the bootsector is loaded.
 RAM_BOOTSECTOR = 0x0B00
 
@@ -16,6 +15,15 @@ class BootSector(object):
     The bootsector itself is loaded into C128 memory at $0B00.
     """
     def __init__(self, bytes):
+        self.load_address = 0
+        self.bank = 0
+        self.disk_block = 0
+        self.diskname = ''
+        self.filename = ''
+        self.code_offset = 0
+        self.code_address = 0
+        self.code = ''
+
         self.is_valid = bytes.startswith('CBM')
         if self.is_valid:
             s = ByteStream(bytes[3:])
@@ -27,15 +35,6 @@ class BootSector(object):
             self.code_offset = s.pos
             self.code_address = self.code_offset + RAM_BOOTSECTOR
             self.code = s.rest()
-        else:
-            self.load_address = 0
-            self.bank = 0
-            self.disk_block = 0
-            self.diskname = ''
-            self.filename = ''
-            self.code_offset = 0
-            self.code_address = 0
-            self.code = ''
 
 
     @property
