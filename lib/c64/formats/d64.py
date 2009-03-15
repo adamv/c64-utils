@@ -9,7 +9,22 @@ import c64.bytestream
 from c64.formats import format_bytes
 from c64.formats.cbmdos import *
 
-STRUCT_HEADER = struct_doc('''
+class D64_Description(object):
+    """Desribe the 1541 disk geometry and related CBM-DOS version."""
+    BYTES_PER_SECTOR = 256
+    
+    sector_counts = (
+        # (starting track, ending track, sectors in this track group)
+        (0, 0, 0),
+        (1,  17, 21),
+        (18, 24, 19),
+        (25, 30, 18),
+        (31, 35, 17))
+
+    DIRECTORY_HEADER = (18, 0)
+    DIRECTORY_ENTRIES = (18, 1)
+    
+    STRUCT_HEADER = struct_doc('''
 <       # Little-endian
 xx      # Track/sector of first directory block; should always be 18/1 for normal disks
 x       # 'A' (representing "4040 format".)
@@ -23,22 +38,6 @@ xx      # '2A' (DOS version and format type.)
 xxxx    # Shifted spaces ($A0)
 85x     # Rest of sector is unused.
 ''')
-
-
-class D64_Description(object):
-    """Desribe the 1541 disk geometry and related CBM-DOS version."""
-    BYTES_PER_SECTOR = 256
-    
-    sector_counts = (
-        # (starting track, ending track, sectors in this track group)
-        (0,  0,  0),
-        (1,  17, 21),
-        (18, 24, 19),
-        (25, 30, 18),
-        (31, 35, 17))
-
-    DIRECTORY_HEADER = (18, 0)
-    DIRECTORY_ENTRIES = (18, 1)
     
     def __init__(self):
         self.sectors_per_track = _make_sector_table(self.sector_counts)
@@ -56,7 +55,7 @@ class DiskImage(object):
     """
 
     def __init__(self, description, bytes):
-        self._desc = description()
+        self._desc = description
         self.bytes = bytes
         self.bootsector = BootSector(self.get_sector(1,0))
 
@@ -107,8 +106,8 @@ class DiskImage(object):
 class DosDisk(object):
     """Represents a CBM-DOS formatted 1541 Disk Image."""
 
-    DIRECTORY_HEADER = (18, 0)
-    DIRECTORY_ENTRIES = (18, 1)
+    # DIRECTORY_HEADER = (18, 0)
+    # DIRECTORY_ENTRIES = (18, 1)
 
     def __init__(self, 
             disk, 
@@ -116,18 +115,19 @@ class DosDisk(object):
             image_type='Abstract CBM DOS disk'):
         
         self.disk = disk
+        self._desc = disk._desc
         self._read_directory()
         self.image_type = image_type
         
     def _read_directory(self):
         self.BAM, self.raw_disk_name, self.disk_id =\
             struct.unpack(
-                STRUCT_HEADER,
-                self.disk.get_sector( *self.DIRECTORY_HEADER ))
+                self._desc.STRUCT_HEADER,
+                self.disk.get_sector( *self._desc.DIRECTORY_HEADER ))
 
         self.disk_name = self.raw_disk_name.strip('\xA0')
         self.directory_sectors = [DirectorySector(*x)
-            for x in self.disk.walk_sectors( *self.DIRECTORY_ENTRIES )]
+            for x in self.disk.walk_sectors( *self._desc.DIRECTORY_ENTRIES )]
 
         self.raw_entries = [e for s in self.directory_sectors for e in s.entries]
         self.entries = [e for e in self.raw_entries if e.size > 0]
@@ -152,6 +152,13 @@ class DosDisk(object):
         return self.disk.has_bootsector
 
 
+class D64Disk(DosDisk):
+    def __init__(self, bytes):
+        _desc = D64_Description()
+        DosDisk.__init__(self, DiskImage(_desc, bytes),
+                image_type="D64 Disk Image")
+
+
 def load(filename):
     with open(filename) as f:
-        return DosDisk(DiskImage(D64_Description, f.read()))
+        return D64Disk(f.read())
