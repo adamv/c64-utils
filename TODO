@@ -14,3 +14,5 @@ Disk formats:
 ** DOS versions are tied to drives
 ** A disk has a certain number of tracks and tracks-per-sector, and
    related SECTOR locations.
+* Add support for GEOS files/directory information
+* Add support for REL files
