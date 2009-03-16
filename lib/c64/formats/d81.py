@@ -38,7 +38,7 @@ class D81_Description(DiskDescription):
     
     STRUCT_HEADER = struct_doc('''
 <       # Little-endian
-xx      # Track/sector of first directory block; should always be 40/3 for normal disks
+xx      # Track/sector of first directory block; 40/3 for normal disks
 x       # 'D' (representing "4040 format".)
 x       # 0 Null byte.
 16s     # Disk name, PET-ASCII, $A0 padded
@@ -55,7 +55,7 @@ class D81Disk(DosDisk):
     def __init__(self, bytes):
         _desc = D81_Description()
         DosDisk.__init__(self, DiskImage(_desc, bytes),
-                image_type="D64 Disk Image")
+                image_type="1581 Diskette")
 
 
 def load(filename):

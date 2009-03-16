@@ -4,7 +4,14 @@ from __future__ import with_statement
 import sys
 import os
 
-from c64.formats import d64, t64, basic
+from c64.formats import d64, d81, t64, basic
+
+_loaders = (
+    ('.d64', d64.load),
+    ('.t64', t64.load),
+    ('.d81', d81.load),
+    )
+    
 
 def parse_args():
     from optparse import OptionParser
@@ -22,25 +29,29 @@ def parse_args():
         
     return p.parse_args()
 
+
 def get_loader(image_name):
     """Get a loader class that can handle a given image."""
-    if image_name.endswith('.d64'):
-        return d64.load
     
-    if image_name.endswith('.t64'):
-        return t64.load
+    for ext, loader in _loaders:
+        if image_name.endswith(ext):
+            return loader
 
     raise Exception, "Unknown image type '%s'" % (image_name, )
 
 def directory(image_name):
-    d = d64.load(image_name)
+    loader = get_loader(image_name)
+    d = loader(image_name)
     
     print
-    print 'Diskette "%s", %2s' % (d.disk_name, d.disk_id)
+    print '%s: "%s", %2s' % (d.image_type, d.disk_name, d.disk_id)
     print
     
-    for e in d.entries:
-        print '%-5u %-18s  %s  (%d,%d)' % (e.size, '"'+e.name+'"', e.format, e.track, e.sector)
+    print '###:  %-5s %-18s  Type' % ('Size','Name')
+    print '----  %-5s %-18s  ----' % ('-'*4, '-'*18)
+    for i, e in enumerate(d.entries):
+        print '%3d:  %-5u %-18s  %s' % (
+                i+1, e.size, '"'+e.name+'"', e.format)
         
     if d.has_bootsector:
         print

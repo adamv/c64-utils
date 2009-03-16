@@ -47,6 +47,7 @@ class TapeEntry(object):
 
 class T64(object):
     def __init__(self, bytes):
+        self.image_type = "T64 Tape Container"
         self.bytes = bytes
         self._validate()
         

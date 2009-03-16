@@ -8,6 +8,15 @@ class FileContaner(object):
     """
     
     @property
+    def image_type(self):
+        """Short description of this container.
+        
+        Appropriate descriptions are "1541 Diskette" and
+        "T64 Tape Container"
+        """
+        return ''
+    
+    @property
     def entries(self):
         """A list of entries in this container.
         

@@ -43,7 +43,7 @@ class D64Disk(DosDisk):
     def __init__(self, bytes):
         _desc = D64_Description()
         DosDisk.__init__(self, DiskImage(_desc, bytes),
-                image_type="D64 Disk Image")
+                image_type="1541 Diskette")
 
 
 def load(filename):
