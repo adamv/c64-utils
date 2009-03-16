@@ -14,7 +14,7 @@ class D81Tests(DiskTestCase):
         
     def test_entries(self):
         d = d81.load(self.get_disk('bbs/drive8.d81'))
-        self.assertEquals(73, len(d.entries))
+        self.assertEquals(145, len(d.entries))
 
 
 if __name__ == "__main__":

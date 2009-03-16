@@ -25,12 +25,12 @@ FILE_TYPES = {
     2: "PRG",
     3: "USR",
     4: "REL",
+    5: "CBM", # Partition entries on 1581 disks.
 }
 
+BYTES_PER_SECTOR = 256
 
 class DiskDescription(object):
-    BYTES_PER_SECTOR = 256
-
     def __init__(self):
         self.sectors_per_track = _make_sector_table(self._SECTOR_COUNTS)
 
@@ -97,25 +97,26 @@ def _make_sector_table(sector_counts):
     return l
 
 
+_STRUCT_ENTRY = struct_doc('''
+    <      # Little-endian
+    xx     # Track/Sector of next Directory Sector (or 0 if not first entry in sector)
+    B      # File Type
+    BB     # Track/Sector of first File Sector
+    16s    # Filename, PET-ASCII, $A0 padded
+    xxx    # RELative file data
+    xxxxxx # Unused (except with GEOS disks)
+    H      # File size in sectors
+    ''')
+
+
 class DirectoryEntry(object):
     """Represents a single CBM-DOS directory entry."""
-    STRUCT_ENTRY = struct_doc('''
-        <      # Little-endian
-        xx     # Track/Sector of next Directory Sector (or 0 if not first entry in sector)
-        B      # File Type
-        BB     # Track/Sector of first File Sector
-        16s    # Filename, PET-ASCII, $A0 padded
-        xxx    # RELative file data
-        xxxxxx # Unused (except with GEOS disks)
-        H      # File size in sectors
-        ''')
 
-    
     def __init__(self, bytes):
         self.bytes = bytes
         
         self.typeflags, self.track, self.sector, self.raw_name, self.size =\
-            struct.unpack(self.STRUCT_ENTRY, bytes)
+            struct.unpack(_STRUCT_ENTRY, bytes)
             
         # Directory entries are padded to 16 characters with $A0.
         # Strip these off so we can print the names.
@@ -166,7 +167,7 @@ class DiskImage(object):
     def __init__(self, description, bytes):
         self._desc = description
         self.bytes = bytes
-        self.bootsector = BootSector(self.bytes[0:256])
+        self.bootsector = BootSector(self.bytes[0:BYTES_PER_SECTOR])
 
     @property
     def has_bootsector(self):
@@ -175,11 +176,11 @@ class DiskImage(object):
     def get_byte_offset(self, track, sector):
         "Return the byte-offset of the given sector."
         ofs = sector + sum(self._desc.sectors_per_track[i] for i in range(1, track))
-        return ofs * self._desc.BYTES_PER_SECTOR
+        return ofs * BYTES_PER_SECTOR
     
     def get_sector(self, track, sector):
         ofs = self.get_byte_offset(track, sector)
-        return self.bytes[ofs:ofs + self._desc.BYTES_PER_SECTOR]
+        return self.bytes[ofs:ofs + BYTES_PER_SECTOR]
         
     def walk_sectors(self, track, sector):
         sectors_seen = set()
@@ -224,7 +225,7 @@ class DosDisk(object):
         self.image_type = image_type
         
     def _read_directory(self):
-        self.BAM, self.raw_disk_name, self.disk_id =\
+        self.raw_disk_name, self.disk_id =\
             struct.unpack(
                 self._desc.STRUCT_HEADER,
                 self.disk.get_sector( *self._desc.DIRECTORY_HEADER ))

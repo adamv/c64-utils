@@ -28,7 +28,7 @@ class D64_Description(DiskDescription):
 xx      # Track/sector of first directory block; should always be 18/1 for normal disks
 x       # 'A' (representing "4040 format".)
 x       # 0 ("Null flag for future DOS use.")
-140s    # Block Allocation Map (BAM)
+140x    # Block Allocation Map (BAM)
 16s     # Disk name, PET-ASCII, $A0 padded
 xx      # Two shift-spaces
 2s      # Disk ID
