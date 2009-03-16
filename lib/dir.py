@@ -58,7 +58,7 @@ def directory(image_name):
         print d.disk.bootsector
 
 def extract_file(filename, bytes):
-    outname = filename+'.prg'
+    outname = filename.strip() + '.prg'
     if os.path.exists(outname):
         print "File '%s' already exists, aborting for safety." % (outname,)
         return
@@ -79,14 +79,48 @@ def show_basic(filename, bytes):
     print prg.list()
 
 
+def show_file(image_name, options):
+    try:
+        loader = get_loader(image_name)
+        d = loader(image_name)
+        
+        if options.sector:
+            if not options.extract:
+                print USAGE
+                return
+
+            t,s = options.sector.split(',')
+            t = int(t)
+            s = int(s)
+            
+            bytes = d.disk.get_sector(t,s)
+            extract_file('sector-%d-%d' % (t,s), bytes)
+        else:
+            filename = args.pop(0)
+            bytes = d.find(filename)
+        
+            if options.extract:
+                extract_file(filename, bytes)
+            else:
+                show_basic(filename, bytes)
+    except Exception, e:
+        print e
+
+
 USAGE = """
-List the contents of a 1541 disk image (.D64)
+List the contents of a 1541 (d64) or 1581 (d81) disk image.
 
 List the directory:
     ./dir.py <disk image name>
     
 Display a file from the image, as detokenized BASIC:
     ./dir.py <disk image name> <file name>
+    
+Extract a file from the image:
+    ./dir.py <disk image name> <file name> -e
+    
+Extract a single track/sector (such as a bootsector):
+    ./dir.py <disk image name> -s1,0 -e
 """
 
 def main():
@@ -100,32 +134,7 @@ def main():
         
     show_listing = (len(args) == 1) or (options.sector)
     if show_listing:
-        try:
-            loader = get_loader(image_name)
-            d = loader(image_name)
-            
-            if options.sector:
-                if not options.extract:
-                    print USAGE
-                    return
-
-                t,s = options.sector.split(',')
-                t = int(t)
-                s = int(s)
-                
-                bytes = d.disk.get_sector(t,s)
-                extract_file('sector-%d-%d' % (t,s), bytes)
-            else:
-                filename = args.pop(0)
-                bytes = d.find(filename)
-            
-                if options.extract:
-                    extract_file(filename, bytes)
-                else:
-                    show_basic(filename, bytes)
-        except Exception, e:
-            print e
-            
+        show_file(image_name, options)
         return
 
     print USAGE
