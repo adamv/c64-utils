@@ -8,7 +8,7 @@ from c64 import struct_doc, blocks
 from c64.bytestream import ByteStream
 
 __all__ = [
-    'FILE_TYPES',
+    'FILE_TYPES', 'GEOS_FILE_TYPES'
     'DirectorySector', 'BootSector',
     'DiskImage', 'DosDisk', 'DiskDescription',
     'CircularFileError', 'FileNotFoundError', 'FormatError', 'IllegalSectorError'
@@ -27,6 +27,70 @@ FILE_TYPES = {
     4: "REL",
     5: "CBM", # Partition entries on 1581 disks.
 }
+
+GEOS_FILE_TYPES = {
+    0x00: "Non-GEOS", # normal C64 file
+    0x01: "BASIC",
+    0x02: "Assembler",
+    0x03: "Data File",
+    0x04: "System File",
+    0x05: "Desk Accessory",
+    0x06: "Application",
+    0x07: "Application Data", # user-created documents
+    0x08: "Font File",
+    0x09: "Printer Driver",
+    0x0A: "Input Driver",
+    0x0B: "Disk Driver", # or Disk Device
+    0x0C: "System Boot File",
+    0x0D: "Temporary",
+    0x0E: "Auto-Execute File",
+}
+
+"""
+  Byte: $00-01: Contains $00/$FF since its only 1 sector long
+         02-04: Information sector ID bytes (03 15 BF). The "03" is  likely
+                the bitmap width, and the "15" is likely the bitmap height,
+                but rare exceptions do exist to this!
+         05-43: Icon bitmap (sprite format, 63 bytes)
+            44: C64 filetype (same as that from the directory entry)
+            45: GEOS filetype (same as that from the directory entry)
+            46: GEOS file structure (same as that from the dir entry)
+         47-48: Program load address
+         49-4A: Program end address (only with accessories)
+         4B-4C: Program start address
+         4D-60: Class text (terminated with a $00)
+         61-74: Author (with application data: name  of  application  disk,
+                terminated with a $00. This string may not  necessarily  be
+                set, or it may contain invalid data)
+                The following GEOS files have authors:
+                  1 - BASIC
+                  2 - Assembler
+                  5 - Desk Accessory
+                  6 - Application
+                  9 - Printer Driver
+                 10 - Input Driver
+         75-88: If a document, the name of the application that created it.
+         89-9F: Available for applications, unreserved.
+         A0-FF: Description (terminated with a $00)
+"""
+
+_STRUCT_GEOS_INFO_BLOCK = struct_doc('''
+<       # Little-endian
+xx      # $00,$FF (no next sector, all bytes in this sector are valid data.)
+xxx     # ID bytes ($03 $15 $BF)
+63b     # Icon bitmap in sprite format
+b       # C64 filetype (same as in directory entry)
+b       # GEOS filtetype (same as in directory entry)
+b       # GEOS file structure (same as in directory entry)
+H       # Program load address
+H       # Program end address (for accessories)
+H       # Program start address
+20s     # Class text
+20s     # Author
+20s     # Document Application
+20b     # Application specific
+96s     # Description
+''')
 
 BYTES_PER_SECTOR = 256
 
@@ -98,13 +162,22 @@ def _make_sector_table(sector_counts):
 
 
 _STRUCT_ENTRY = struct_doc('''
-    <      # Little-endian
-    xx     # Track/Sector of next Directory Sector (or 0 if not first entry in sector)
-    B      # File Type
-    BB     # Track/Sector of first File Sector
-    16s    # Filename, PET-ASCII, $A0 padded
-    xxx    # RELative file data
-    xxxxxx # Unused (except with GEOS disks)
+    <       # Little-endian
+    xx      # Track/Sector of next Directory Sector (or 0 if not first entry in sector)
+    B       # File Type
+    BB      # Track/Sector of first File Sector
+    16s     # Filename, PET-ASCII, $A0 padded
+    
+    # The next 3 bytes are overloaded for REL and GEOS files
+    ## The track/sector of the REL side-sector block or GEOS info block.
+    x       # track
+    x       # sector
+    
+    ## The REL record size (max 254) or GEOS file structure (0: seq, 1: VLIR)
+    x
+    
+    B      # GEOS: GEOS filetype
+    xxxxx  # GEOS: timestamp
     H      # File size in sectors
     ''')
 
@@ -115,7 +188,7 @@ class DirectoryEntry(object):
     def __init__(self, bytes):
         self.bytes = bytes
         
-        self.typeflags, self.track, self.sector, self.raw_name, self.size =\
+        self.typeflags, self.track, self.sector, self.raw_name, self.geos_type, self.size =\
             struct.unpack(_STRUCT_ENTRY, bytes)
             
         # Directory entries are padded to 16 characters with $A0.

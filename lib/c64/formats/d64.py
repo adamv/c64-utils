@@ -18,8 +18,6 @@ class D64_Description(DiskDescription):
         (25, 30, 18),
         (31, 35, 17))
 
-#    sectors_per_track = _make_sector_table(_SECTOR_COUNTS)
-
     DIRECTORY_HEADER = (18, 0)
     DIRECTORY_ENTRIES = (18, 1)
     
@@ -38,10 +36,10 @@ xxxx    # Shifted spaces ($A0)
 85x     # Rest of sector is unused.
 ''')
 
+_desc = D64_Description()
 
 class D64Disk(DosDisk):
     def __init__(self, bytes):
-        _desc = D64_Description()
         DosDisk.__init__(self, DiskImage(_desc, bytes),
                 image_type="1541 Diskette")
 

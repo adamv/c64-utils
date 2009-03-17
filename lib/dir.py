@@ -5,6 +5,7 @@ import sys
 import os
 
 from c64.formats import d64, d81, t64, basic
+from c64.formats.cbmdos import GEOS_FILE_TYPES
 
 _loaders = (
     ('.d64', d64.load),
@@ -31,10 +32,10 @@ def parse_args():
 
 
 def get_loader(image_name):
-    """Get a loader class that can handle a given image."""
-    
+    """Get a loader that can handle a given image type."""
+
     for ext, loader in _loaders:
-        if image_name.endswith(ext):
+        if image_name.lower().endswith(ext):
             return loader
 
     raise Exception, "Unknown image type '%s'" % (image_name, )
@@ -50,8 +51,12 @@ def directory(image_name):
     print '###:  %-5s %-18s  Type' % ('Size','Name')
     print '----  %-5s %-18s  ----' % ('-'*4, '-'*18)
     for i, e in enumerate(d.entries):
+        format = e.format
+        if e.geos_type > 0:
+            format += " (%s)" % (GEOS_FILE_TYPES.get(e.geos_type,'Unknown GEOS type'),)
+    
         print '%3d:  %-5u %-18s  %s' % (
-                i+1, e.size, '"'+e.name+'"', e.format)
+                i+1, e.size, '"'+e.name+'"', format)
         
     if d.has_bootsector:
         print
@@ -79,7 +84,7 @@ def show_basic(filename, bytes):
     print prg.list()
 
 
-def show_file(image_name, options):
+def show_file(image_name, options, args):
     try:
         loader = get_loader(image_name)
         d = loader(image_name)
@@ -134,7 +139,7 @@ def main():
         
     show_listing = (len(args) == 1) or (options.sector)
     if show_listing:
-        show_file(image_name, options)
+        show_file(image_name, options, args)
         return
 
     print USAGE
