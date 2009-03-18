@@ -53,7 +53,7 @@ def directory(image_name):
     for i, e in enumerate(d.entries):
         format = e.format
         if e.geos_type > 0:
-            format += " (%s)" % (GEOS_FILE_TYPES.get(e.geos_type,'Unknown GEOS type'),)
+            format += " (%s)" % (GEOS_FILE_TYPES.get(e.geos_type,'Unknown GEOS type: $%02x' % e.geos_type),)
     
         print '%3d:  %-5u %-18s  %s' % (
                 i+1, e.size, '"'+e.name+'"', format)

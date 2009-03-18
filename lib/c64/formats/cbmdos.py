@@ -154,11 +154,8 @@ class BootSector(object):
 
 
 def _make_sector_table(sector_counts):
-    l = list()
-    for (start, end, sectors) in sector_counts:
-        l.extend(itertools.repeat(sectors, end - start + 1))
-
-    return l
+    return [s for start, end, sectors in sector_counts 
+            for s in itertools.repeat(sectors, end - start + 1)]
 
 
 _STRUCT_ENTRY = struct_doc('''
@@ -287,8 +284,7 @@ class DiskImage(object):
 class DosDisk(object):
     """Represents a CBM-DOS formatted Disk Image."""
 
-    def __init__(self, 
-            disk, 
+    def __init__(self, disk, 
             header_sector=None, entries_sector=None, 
             image_type='Abstract CBM DOS disk'):
         
