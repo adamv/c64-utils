@@ -167,11 +167,10 @@ _STRUCT_ENTRY = struct_doc('''
     
     # The next 3 bytes are overloaded for REL and GEOS files
     ## The track/sector of the REL side-sector block or GEOS info block.
-    x       # track
-    x       # sector
+    BB      # Track/Sector
     
     ## The REL record size (max 254) or GEOS file structure (0: seq, 1: VLIR)
-    x
+    B
     
     B      # GEOS: GEOS filetype
     xxxxx  # GEOS: timestamp
@@ -185,8 +184,12 @@ class DirectoryEntry(object):
     def __init__(self, bytes):
         self.bytes = bytes
         
-        self.typeflags, self.track, self.sector, self.raw_name, self.geos_type, self.size =\
-            struct.unpack(_STRUCT_ENTRY, bytes)
+        (self.typeflags, self.track, self.sector, self.raw_name, 
+            info_t, info_s, self.geos_structure, self.geos_type, 
+            self.size) =\
+                struct.unpack(_STRUCT_ENTRY, bytes)
+                
+        self.geos_info_location = (info_t, info_s)
             
         # Directory entries are padded to 16 characters with $A0.
         # Strip these off so we can print the names.
@@ -207,6 +210,10 @@ class DirectoryEntry(object):
     @property
     def locked(self):
         return self.typeflags & 0xC0
+        
+    @property
+    def geos_file(self):
+        return self.geos_type >= 0
         
     def __str__(self):
         return "<Directory Entry '%s' %d (%d,%d)>" %\
@@ -315,6 +322,14 @@ class DosDisk(object):
         for e in self.entries:
             if e.name == filename:
                 return self.disk.read_file(e.track, e.sector)
+        raise FileNotFoundError, 'File "%s" not found on disk.' % (filename)
+    
+    def geos_info(self, filename, ignore_case=False):
+        for e in self.entries:
+            if e.name == filename:
+                info = self.disk.get_sector(*e.geos_info_location)
+                # Actually, want to unpack the info before returning it.
+                return info
         raise FileNotFoundError, 'File "%s" not found on disk.' % (filename)
     
     def __str__(self):

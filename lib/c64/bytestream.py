@@ -6,10 +6,18 @@ class ByteStream(object):
     def __init__(self, s):
         self.bytes = s
         self.pos = 0
+        self._mark = 0
         
     def reset(self, offset=0):
         "Reset the internal stream position to the given `offset`."
         self.pos = offset
+        
+    def mark(self):
+        "Set the stream marker for counting bytes read."
+        self._mark = self.pos
+        
+    def since_mark(self):
+        return self.pos - self._mark
         
     def word(self):
         "Read the next two bytes from the stream, and convert them to an integer (little-endian)."

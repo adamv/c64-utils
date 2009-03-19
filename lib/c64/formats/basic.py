@@ -20,7 +20,18 @@ VERSIONS = (
     )
 
 
+class BasicLine(object):
+    """Represents a single decoded line of BASIC."""
+
+    def __init__(self, byte_count, line_number, line, unknown_opcode):
+        self.byte_count = byte_count
+        self.line_number = line_number
+        self.line = line
+        self.unknown_opcode = unknown_opcode
+
 class Basic(object):
+    """Represents a tokenized BASIC program."""
+    
     BASIC_RAM = 0x0801
     
     def __init__(self, bytes, has_header=True, show_ml_bytes=True):
@@ -34,25 +45,56 @@ class Basic(object):
         # ...or use this to switch off between C64/C128 token lists.
         if has_header:
             self.load_address = self.bytes.word()
+            
+        self.listing = list()
+        self.errors = list()
+        self.parsed = False
+
+    def verify(self):
+        if not self.parsed:
+            self.parse()
+        
+        line = -1
+        for l in self.listing:
+            if l.byte_count > 255:
+                self.errors.append("Program line %d too long." % (l.line_number,))
+                return False
+            
+            if l.line_number <= line:
+                self.errors.append(
+                    "Program lines are not in order (%d follows %s)." % (
+                        l.line_number, line))
+                return False
+
+            line = l.line_number
+            
+        return True
 
     def list(self):
-        saw_unknown_opcode = False
+        if not self.parsed:
+            self.parse()
+            
+        return self.report
+        
+    def parse(self):
         prg = list()
-        line_numbers = list()
         
         while not self.bytes.eof():
+            self.bytes.mark()
+            
             link = self.bytes.word()
             if link == 0:
                 break
             
             line_number = self.bytes.word()
-            line_numbers.append(line_number)
             
             line = [str(line_number), ' ']
             quote_mode = False
+            unknown_opcode = False
 
-            # Parse this line...
-            while True:
+            # Parse this basic line; stop if we hit eof(), which means 
+            # either the file is corrupt or it isn't a BASIC program.
+            while not self.bytes.eof():
                 c = self.bytes.byte()
                 if c == 0:
                     break
@@ -64,13 +106,17 @@ class Basic(object):
                 elif not quote_mode and 0x80 <= c:
                     # Parse an opcode token; they have the high bit set
                     opcode = TOKEN_MAP.get(c, "{UNKNOWN}")
-                    saw_unknown_opcode = saw_unknown_opcode or opcode == '{UNKNOWN}'
+                    unknown_opcode = unknown_opcode or opcode == '{UNKNOWN}'
                     line.append(opcode)
                 else:
                     # Convert a "PETSCII" to host ASCII
                     line.append(quote_petscii(c))
-                 
-            prg.append(''.join(line))
+                    
+            text = ''.join(line)
+            prg.append(text)
+
+            self.listing.append(
+                BasicLine(self.bytes.since_mark(), line_number, text, unknown_opcode))
         
         if not self.bytes.eof():
             self.ml_bytes = self.bytes.rest()
@@ -80,4 +126,5 @@ class Basic(object):
             if self.show_ml_bytes:
                 prg.append('%s' % format_bytes(self.ml_bytes))
             
-        return '\n'.join(prg)
+        self.parsed = True
+        self.report = '\n'.join(prg)

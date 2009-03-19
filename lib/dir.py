@@ -76,16 +76,23 @@ def extract_file(filename, bytes):
 def show_basic(filename, bytes):
     prg = basic.Basic(bytes)
 
-    print
-    print "Load address:", prg.load_address
     if prg.load_address != prg.BASIC_RAM:
-        print "(Non-standard load address, possible hybrid BASIC/ML program.)"
+        msg_address = "(Non-standard load address; possible hybrid BASIC/ML program.)"
+    else:
+        msg_address = ""
 
-    print prg.list()
+    print
+    print "Load address: %s %s" % (prg.load_address, msg_address)
+
+    if prg.verify():
+        print prg.list()
+    else:
+        print 'Warnings (use --xxx to force listing):'
+        print '\n'.join(prg.errors)
 
 
 def show_file(image_name, options, args):
-    try:
+    #try:
         loader = get_loader(image_name)
         d = loader(image_name)
         
@@ -108,8 +115,8 @@ def show_file(image_name, options, args):
                 extract_file(filename, bytes)
             else:
                 show_basic(filename, bytes)
-    except Exception, e:
-        print e
+    #except Exception, e:
+    #    print e
 
 
 USAGE = """
