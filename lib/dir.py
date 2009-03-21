@@ -7,6 +7,22 @@ import os
 from c64.formats import d64, d81, t64, basic
 from c64.formats.cbmdos import GEOS_FILE_TYPES
 
+USAGE = """
+List the contents of a 1541 (d64) or 1581 (d81) disk image.
+
+List the directory:
+    ./dir.py <disk image name>
+    
+Display a file from the image, as detokenized BASIC:
+    ./dir.py <disk image name> <file name>
+    
+Extract a file from the image:
+    ./dir.py <disk image name> <file name> -e
+    
+Extract a single track/sector (such as a bootsector):
+    ./dir.py <disk image name> -s1,0 -e
+"""
+
 _loaders = (
     ('.d64', d64.load),
     ('.t64', t64.load),
@@ -118,22 +134,6 @@ def show_file(image_name, options, args):
     #except Exception, e:
     #    print e
 
-
-USAGE = """
-List the contents of a 1541 (d64) or 1581 (d81) disk image.
-
-List the directory:
-    ./dir.py <disk image name>
-    
-Display a file from the image, as detokenized BASIC:
-    ./dir.py <disk image name> <file name>
-    
-Extract a file from the image:
-    ./dir.py <disk image name> <file name> -e
-    
-Extract a single track/sector (such as a bootsector):
-    ./dir.py <disk image name> -s1,0 -e
-"""
 
 def main():
     options, args = parse_args()
